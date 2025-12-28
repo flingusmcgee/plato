@@ -1,0 +1,1 @@
+g++ main.cpp -o main.exe -I "C:\Program Files\SDL3\x86_64-w64-mingw32\include" -I "C:\Program Files\SDL3_image\x86_64-w64-mingw32\include" -L "C:\Program Files\SDL3\x86_64-w64-mingw32\lib" -L "C:\Program Files\SDL3_image\x86_64-w64-mingw32\lib" -lSDL3 -lSDL3_image
