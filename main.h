@@ -2,6 +2,10 @@
 #include <string>
 #include <vector>
 
+static std::vector<SDL_Texture *> playerSpriteList = { };
+static std::vector<SDL_Texture *> npcSpriteList    = { };
+static std::vector<SDL_Texture *> mapTileList      = { };
+
 const static int SCREENWIDTH = 640;
 const static int SCREENHEIGHT = 480;
 
@@ -62,9 +66,11 @@ const static int NPC[MAPWIDTH][MAPHEIGHT] = {
 
 struct Entity {
     std::string name;
-    SDL_Texture *texture;
+    SDL_Texture **texture;
     SDL_FRect rect;
 };
 
+static std::vector<Entity> entityOrder = { };
+
 static SDL_AppResult loadTexture(std::string filePath, std::vector<SDL_Texture *> *destination);
-static void orderEntity(std::string name, SDL_Texture *texture, SDL_FRect rect);
+static void orderEntity(std::string name, SDL_Texture **texture, SDL_FRect rect);

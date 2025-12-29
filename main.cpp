@@ -9,10 +9,6 @@
 static SDL_Window   *window   = NULL;
 static SDL_Renderer *renderer = NULL;
 static SDL_Texture  *texture  = NULL;
-static std::vector<SDL_Texture *> playerSpriteList = { };
-static std::vector<SDL_Texture *> npcSpriteList    = { };
-static std::vector<SDL_Texture *> mapTileList      = { };
-static std::vector<Entity> entityOrder = { };
 
 /* This function runs once at startup. */
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
@@ -122,18 +118,17 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     player.h = SPRITEHEIGHT;
 
     /* Render the map tiles */
-    int renderedTiles = 0;
-
     tile.w = TILEWIDTH;
     tile.h = TILEHEIGHT;
     tile.x = tilex;
     tile.y = tiley;
+    int renderedTiles = 0;
     for (int i = 0; i < MAPHEIGHT; i++) {
         for (int j = 0; j < MAPWIDTH; j++) {
             if (tile.x > -TILEWIDTH && tile.x < SCREENWIDTH && tile.y > -TILEHEIGHT && tile.y < SCREENHEIGHT) {
                 SDL_RenderTexture(renderer, mapTileList.at(MAP[i][j]), NULL, &tile);
                 if (NPC[i][j] > EMPTY) {
-                    orderEntity(NPCPATHS[NPC[i][j]], npcSpriteList.at(NPC[i][j]), tile);
+                    orderEntity(NPCPATHS[NPC[i][j]], &npcSpriteList.at(NPC[i][j]), tile);
                 }
                 renderedTiles += 1;
             }
@@ -144,16 +139,16 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     }
 
     /* Render the entities */
-    orderEntity(SPRITEPATHS[dir/90], playerSpriteList.at(dir/90), player);
+    orderEntity(SPRITEPATHS[dir/90], &playerSpriteList.at(dir/90), player);
     for (Entity entity : entityOrder) {
-        SDL_RenderTexture(renderer, entity.texture, NULL, &entity.rect);
+        SDL_RenderTexture(renderer, *entity.texture, NULL, &entity.rect);
     }
 
     /* Line so it's canon */
     SDL_SetRenderDrawColor(renderer, 0, 0, 255, SDL_ALPHA_OPAQUE);
     SDL_RenderLine(renderer, 0, 0, SCREENWIDTH, SCREENHEIGHT);
 
-    /* Text */
+    /* Debug text */
     SDL_RenderDebugTextFormat(renderer, 10, 10, "x: %f", camx);
     SDL_RenderDebugTextFormat(renderer, 10, 20, "y: %f", camy);
     SDL_RenderDebugTextFormat(renderer, 10, 30, "tilex: %d", tilex);
@@ -177,6 +172,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     SDL_DestroyTexture(texture);
     for (SDL_Texture *bits : playerSpriteList) {
+        SDL_DestroyTexture(bits);
+    }
+    for (SDL_Texture *bits : npcSpriteList) {
         SDL_DestroyTexture(bits);
     }
     for (SDL_Texture *bits : mapTileList) {
@@ -213,7 +211,7 @@ static SDL_AppResult loadTexture(std::string filePath, std::vector<SDL_Texture *
 }
 
 /* Aligns entities to a pseudo z-index in preparation of rendering */
-static void orderEntity(std::string name, SDL_Texture *texture, SDL_FRect rect) {
+static void orderEntity(std::string name, SDL_Texture **texture, SDL_FRect rect) {
     if (!entityOrder.size()) {
         entityOrder.push_back({name, texture, rect});
     }
