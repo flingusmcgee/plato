@@ -85,6 +85,13 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_FRect tile;
     entityOrder = { };
 
+    player.w = SPRITEWIDTH;
+    player.h = SPRITEHEIGHT;
+    npc.w = TILEWIDTH;
+    npc.h = TILEHEIGHT;
+    tile.w = TILEWIDTH;
+    tile.h = TILEHEIGHT;
+
     /* Constrain the camera to map dimensions */
     int tilex, tiley;
     int playerx, playery;
@@ -118,22 +125,20 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     }
     player.x = playerx;
     player.y = playery;
-    player.w = SPRITEWIDTH;
-    player.h = SPRITEHEIGHT;
-
-    /* Render the map tiles */
-    tile.w = TILEWIDTH;
-    tile.h = TILEHEIGHT;
     tile.x = tilex;
     tile.y = tiley;
+
+    /* Render the map tiles */
     int renderedTiles = 0;
     for (int i = 0; i < MAPHEIGHT; i++) {
         for (int j = 0; j < MAPWIDTH; j++) {
             if (tile.x > -TILEWIDTH && tile.x < SCREENWIDTH && tile.y > -TILEHEIGHT && tile.y < SCREENHEIGHT) {
                 SDL_RenderTexture(renderer, mapTileList.at(MAP[i][j]), NULL, &tile);
                 /* Queue entity processing if applicable */
+                npc.x = tile.x;
+                npc.y = tile.y;
                 if (NPC[i][j] > EMPTY) {
-                    orderEntity(NPCPATHS[NPC[i][j]], &npcSpriteList.at(NPC[i][j]), tile);
+                    orderEntity(NPCPATHS[NPC[i][j]], &npcSpriteList.at(NPC[i][j]), npc);
                 }
                 renderedTiles += 1;
             }
@@ -164,7 +169,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_RenderDebugText(renderer, 100, 50, "Waiting for something?");
     SDL_SetRenderScale(renderer, 1, 1);
     for (int i = 0; i < entityOrder.size(); i++) {
-        SDL_RenderDebugTextFormat(renderer, 10, SCREENHEIGHT - entityOrder.size() * 15 + i * 10, "%s", entityOrder[i].name.c_str());
+        SDL_RenderDebugTextFormat(renderer, 10, SCREENHEIGHT - (entityOrder.size() - i) * 10, "%s %.1f %.1f", entityOrder[i].name.c_str(), entityOrder[i].rect.x, entityOrder[i].rect.y);
     }
 
     /* Show time! */
@@ -241,12 +246,13 @@ static void orderEntity(std::string name, SDL_Texture **texture, SDL_FRect rect)
     else {
         auto i = entityOrder.begin();
         for (Entity entity : entityOrder) {
-            if (rect.y - rect.h < entity.rect.y) {
+            if (rect.y - (TILEHEIGHT - rect.h) <= entity.rect.y) {
                 entityOrder.insert(i, {name, texture, rect});
+                break;
             }
             i++;
         }
-        if (rect.y - rect.h > entityOrder.back().rect.y) {
+        if (rect.y - (TILEHEIGHT - rect.h) > entityOrder.back().rect.y) {
             entityOrder.push_back({name, texture, rect});
         }
     }
