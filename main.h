@@ -1,3 +1,5 @@
+#pragma once
+#include "reader.h"
 #include <SDL3/SDL.h>
 #include <string>
 #include <vector>
@@ -6,28 +8,14 @@ static std::vector<SDL_Texture *> playerSpriteList = { };
 static std::vector<SDL_Texture *> npcSpriteList    = { };
 static std::vector<SDL_Texture *> mapTileList      = { };
 
-const static int SCREENWIDTH = 640;
-const static int SCREENHEIGHT = 480;
+static int SCREENWIDTH;
+static int SCREENHEIGHT;
 
-const static float SPEED = 1.0f;
+static float SPEED;
 
-const static std::vector<std::string> SPRITEPATHS = {
-    "assets/timmy_n.png",
-    "assets/timmy_e.png",
-    "assets/timmy_s.png",
-    "assets/timmy_w.png",
-};
-const static std::vector<std::string> NPCPATHS = {
-    "assets/lollipop.png",
-};
-const static std::vector<std::string> TILEPATHS = {
-    "assets/blank.png",
-    "assets/grass.png",
-    "assets/stone.png",
-    "assets/dirt.png",
-    "assets/sand.png",
-    "assets/water.png",
-};
+static std::vector<std::string> SPRITEPATHS = { };
+static std::vector<std::string> NPCPATHS = { };
+static std::vector<std::string> TILEPATHS = { };
 
 enum Tileset {
     BLANK,
@@ -43,26 +31,14 @@ enum NPCset {
     LOLLI,
 };
 
-const static int SPRITEWIDTH = 128;
-const static int SPRITEHEIGHT = 128;
-const static int TILEWIDTH = 256;
-const static int TILEHEIGHT = 256;
-const static int MAPWIDTH = 5;
-const static int MAPHEIGHT = 5;
-const static int MAP[MAPWIDTH][MAPHEIGHT] = {
-    { BLANK, BLANK, BLANK, BLANK, BLANK },
-    { BLANK, GRASS, GRASS, GRASS, STONE },
-    { BLANK, GRASS, GRASS, GRASS, STONE },
-    { BLANK, GRASS, GRASS, GRASS, STONE },
-    { BLANK, WATER, WATER, WATER, WATER },
-};
-const static int NPC[MAPWIDTH][MAPHEIGHT] = {
-    {EMPTY, EMPTY, EMPTY, EMPTY, EMPTY},
-    {EMPTY, EMPTY, EMPTY, EMPTY, EMPTY},
-    {EMPTY, EMPTY, LOLLI, EMPTY, EMPTY},
-    {EMPTY, EMPTY, EMPTY, EMPTY, EMPTY},
-    {EMPTY, EMPTY, EMPTY, LOLLI, EMPTY},
-};
+static int SPRITEWIDTH;
+static int SPRITEHEIGHT;
+static int TILEWIDTH;
+static int TILEHEIGHT;
+static int MAPWIDTH;
+static int MAPHEIGHT;
+static std::vector<std::vector<int>> MAP = { };
+static std::vector<std::vector<int>> NPC = { };
 
 struct Entity {
     std::string name;
@@ -74,3 +50,4 @@ static std::vector<Entity> entityOrder = { };
 
 static SDL_AppResult loadTexture(std::string filePath, std::vector<SDL_Texture *> *destination);
 static void orderEntity(std::string name, SDL_Texture **texture, SDL_FRect rect);
+static void loadGameData(ExternalData external);

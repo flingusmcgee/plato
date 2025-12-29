@@ -1,0 +1,70 @@
+{
+    "screen": {
+        "width": 640,
+        "height": 480
+    },
+    "entity": {
+        "width": 128,
+        "height": 128,
+        "player": {
+            "width": 128,
+            "height": 128,
+            "texture": [
+                "assets/timmy_n.png",
+                "assets/timmy_e.png",
+                "assets/timmy_s.png",
+                "assets/timmy_w.png"
+            ],
+            "speed": 1.0
+        },
+        "npc": {
+            "width": 128,
+            "height": 128,
+            "texture": [
+                "assets/lollipop.png"
+            ],
+            "id": [
+                "LOLLI"
+            ]
+        }
+    },
+    "map": {
+        "mapwidth": 6,
+        "mapheight": 5,
+        "tilewidth": 256,
+        "tileheight": 256,
+        "texture": [
+            "assets/blank.png",
+            "assets/grass.png",
+            "assets/stone.png",
+            "assets/dirt.png",
+            "assets/sand.png",
+            "assets/water.png"
+        ],
+        "id": [
+            "BLANK",
+            "GRASS",
+            "STONE",
+            "DIRT",
+            "SAND",
+            "WATER"
+        ]
+    },
+    "layout": {
+        "map": [
+            "BLANK", "BLANK", "BLANK", "BLANK", "BLANK", "BLANK",
+            "BLANK", "GRASS", "GRASS", "GRASS", "STONE", "SAND" ,
+            "BLANK", "GRASS", "GRASS", "GRASS", "STONE", "SAND" ,
+            "BLANK", "GRASS", "GRASS", "GRASS", "STONE", "SAND" ,
+            "BLANK", "WATER", "WATER", "WATER", "WATER", "SAND"
+        ],
+        "npc": [
+            "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY",
+            "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY",
+            "EMPTY", "EMPTY", "LOLLI", "EMPTY", "EMPTY", "EMPTY",
+            "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY",
+            "EMPTY", "EMPTY", "EMPTY", "LOLLI", "EMPTY", "EMPTY"
+        ]
+        
+    }
+}

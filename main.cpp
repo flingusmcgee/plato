@@ -12,6 +12,10 @@ static SDL_Texture  *texture  = NULL;
 
 /* This function runs once at startup. */
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
+    /* Initialize with external data */
+    Reader reader;
+    loadGameData(reader.readGameData());
+
     SDL_SetAppMetadata("plato game", "0.0", "com.plato.elmegacorp");
 
     if (!SDL_Init(SDL_INIT_VIDEO)) {
@@ -127,6 +131,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         for (int j = 0; j < MAPWIDTH; j++) {
             if (tile.x > -TILEWIDTH && tile.x < SCREENWIDTH && tile.y > -TILEHEIGHT && tile.y < SCREENHEIGHT) {
                 SDL_RenderTexture(renderer, mapTileList.at(MAP[i][j]), NULL, &tile);
+                /* Queue entity processing if applicable */
                 if (NPC[i][j] > EMPTY) {
                     orderEntity(NPCPATHS[NPC[i][j]], &npcSpriteList.at(NPC[i][j]), tile);
                 }
@@ -182,6 +187,24 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     }
     
     /* SDL will clean up the window/renderer for us. */
+}
+
+/* Initialize game data using reader.cpp */
+static void loadGameData(ExternalData external) {
+    SCREENWIDTH  = external.SCREENWIDTH;
+    SCREENHEIGHT = external.SCREENHEIGHT;
+    SPEED        = external.SPEED;
+    SPRITEPATHS  = external.SPRITEPATHS;
+    NPCPATHS     = external.NPCPATHS;
+    TILEPATHS    = external.TILEPATHS;
+    SPRITEWIDTH  = external.SPRITEWIDTH;
+    SPRITEHEIGHT = external.SPRITEHEIGHT;
+    TILEWIDTH    = external.TILEWIDTH;
+    TILEHEIGHT   = external.TILEHEIGHT;
+    MAPWIDTH     = external.MAPWIDTH;
+    MAPHEIGHT    = external.MAPHEIGHT;
+    MAP          = external.MAP;
+    NPC          = external.NPC;
 }
 
 /* Loads texture assets and adds them to a suitable container SDL_Texture list for quick reference. */
