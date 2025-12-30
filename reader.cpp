@@ -71,53 +71,53 @@ ExternalData Reader::readGameData() {
         external.NPC.push_back(row);
         row = { };
     }
-    std::cout << ">> SUCCESS\n";
-    std::cout << ">> CONFIRM:\n";
+    std::printf(">> SUCCESS\n");
+    std::printf(">> CONFIRM:\n");
 
-    std::cout << external.SCREENWIDTH << '\n';
-    std::cout << external.SCREENHEIGHT << '\n';
-    std::cout << external.SPEED << '\n';
-    std::cout << external.SPRITEWIDTH << '\n';
-    std::cout << external.SPRITEHEIGHT << '\n';
-    std::cout << external.TILEWIDTH << '\n';
-    std::cout << external.TILEHEIGHT << '\n';
-    std::cout << external.MAPWIDTH << '\n';
-    std::cout << external.MAPHEIGHT << '\n';
+    std::printf("SCREENWIDTH: %d\n", external.SCREENWIDTH);
+    std::printf("SCREENHEIGHT: %d\n", external.SCREENHEIGHT);
+    std::printf("SPEED: %.1f\n", external.SPEED);
+    std::printf("SPRITEWIDTH: %d\n", external.SPRITEWIDTH);
+    std::printf("SPRITEHEIGHT: %d\n", external.SPRITEHEIGHT);
+    std::printf("TILEWIDTH: %d\n", external.TILEWIDTH);
+    std::printf("TILEHEIGHT: %d\n", external.TILEHEIGHT);
+    std::printf("MAPWIDTH: %d\n", external.MAPWIDTH);
+    std::printf("MAPHEIGHT: %d\n", external.MAPHEIGHT);
 
-    std::cout << ">> SPRITEPATHS\n";
+    std::printf(">> SPRITEPATHS\n");
     for (std::string string : external.SPRITEPATHS) {
-        std::cout << string << '\n';
+        std::printf("%s\n", string.c_str());
     }
-    std::cout << ">> NPCPATHS\n";
+    std::printf(">> NPCPATHS\n");
     for (std::string string : external.NPCPATHS) {
-        std::cout << string << '\n';
+        std::printf("%s\n", string.c_str());
     }
-    std::cout << ">> TILEPATHS\n";
+    std::printf(">> TILEPATHS\n");
     for (std::string string : external.TILEPATHS) {
-        std::cout << string << '\n';
+        std::printf("%s\n", string.c_str());
     }
 
-    std::cout << ">> LAYOUT\n";
+    std::printf(">> LAYOUT\n");
     for (auto id : tileset) {
-        std::cout << id.first << ":" << id.second << '\n';
+        std::printf("%s:%d\n", id.first.c_str(), id.second);
     }
     for (std::vector<int> row : external.MAP) {
         for (int num : row) {
-            std::cout << num << ' ';
+            std::printf("%2d ", num);
         }
-        std::cout << '\n';
+        std::printf("\n");
     }
 
     for (auto id : npcset) {
-        std::cout << id.first << ":" << id.second << '\n';
+        std::printf("%s:%d\n", id.first.c_str(), id.second);
     }
     for (std::vector<int> row : external.NPC) {
         for (int num : row) {
-            std::cout << num << ' ';
+            std::printf("%2d ", num);
         }
-        std::cout << '\n';
+        std::printf("\n");
     }
-    std::cout << ">> GAME DATA LOADED - BEGIN PROCESSING\n";
+    std::printf(">> GAME DATA LOADED - BEGIN PROCESSING\n");
 
     return external;
 }

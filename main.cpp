@@ -54,36 +54,35 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
 
 /* This function runs once per frame, and is the heart of the program. */
 SDL_AppResult SDL_AppIterate(void *appstate) {
+    SDL_SetRenderDrawColor(renderer, 249, 245, 236, SDL_ALPHA_OPAQUE);
+    SDL_RenderClear(renderer);
+
     static float camx { 0 };
     static float camy { 0 };
     static int dir { 0 };
 
-    /* Controls: Fix me! */
+    /* Controls */
     const bool *code = SDL_GetKeyboardState(NULL);
-    if (code[SDL_SCANCODE_W]) {
+    if (code[SDL_SCANCODE_W] || code[SDL_SCANCODE_UP]) {
         camy -= SPEED;
         dir = 0;
     }
-    else if (code[SDL_SCANCODE_D]) {
+    else if (code[SDL_SCANCODE_D] || code[SDL_SCANCODE_RIGHT]) {
         camx += SPEED;
         dir = 90;
     }
-    else if (code[SDL_SCANCODE_S]) {
+    else if (code[SDL_SCANCODE_S] || code[SDL_SCANCODE_DOWN]) {
         camy += SPEED;
         dir = 180;
     }
-    else if (code[SDL_SCANCODE_A]) {
+    else if (code[SDL_SCANCODE_A] || code[SDL_SCANCODE_LEFT]) {
         camx -= SPEED;
         dir = 270;
     }
 
-    SDL_SetRenderDrawColor(renderer, 249, 245, 236, SDL_ALPHA_OPAQUE);
-    SDL_RenderClear(renderer);
-
     SDL_FRect player;
     SDL_FRect npc;
     SDL_FRect tile;
-    entityOrder = { };
 
     player.w = SPRITEWIDTH;
     player.h = SPRITEHEIGHT;
@@ -129,6 +128,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     tile.y = tiley;
 
     /* Render the map tiles */
+    entityOrder = { };
     int renderedTiles = 0;
     for (int i = 0; i < MAPHEIGHT; i++) {
         for (int j = 0; j < MAPWIDTH; j++) {
@@ -233,6 +233,7 @@ static SDL_AppResult loadTexture(std::string filePath, std::vector<SDL_Texture *
 
     destination->push_back(texture);
 
+    texture = NULL;
     SDL_free(path);
     SDL_DestroySurface(surface);
     return SDL_APP_CONTINUE;
