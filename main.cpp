@@ -31,9 +31,15 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
 
     /* Load assets into SDL_Texture lists */
     Asset asset;
-    playerSpriteList = asset.loadTexturesInto(renderer, game.SPRITEPATHS);
-    npcSpriteList = asset.loadTexturesInto(renderer, game.NPCPATHS);
-    mapTileList = asset.loadTexturesInto(renderer, game.TILEPATHS);
+    if (!isEmpty(game.SPRITEPATHS, "Empty SPRITEPATHS")) {
+        playerSpriteList = asset.loadTexturesInto(renderer, game.SPRITEPATHS);
+    }
+    if (!isEmpty(game.NPCPATHS, "Empty NPCPATHS")) {
+        npcSpriteList = asset.loadTexturesInto(renderer, game.NPCPATHS);
+    }
+    if (!isEmpty(game.TILEPATHS, "Empty TILEPATHS")) {
+        mapTileList = asset.loadTexturesInto(renderer, game.TILEPATHS);
+    }
 
     return SDL_APP_CONTINUE;
 }
@@ -133,3 +139,39 @@ static void loadGameData(GameData external) {
     game.MAP          = external.MAP;
     game.NPC          = external.NPC;
 }
+
+/**
+ * Flexible emptiness check for safe handling - Multi-Dimensional Edition
+ * \param container multi-dimensional data structure to be tested
+ * \param messageTotal log message on total emptiness
+ * \param messageComponent log message on individual emptiness
+ */
+template <typename T>
+static bool isEmpty(std::vector<std::vector<T>> container, const char *messageTotal, const char *messageComponent) {
+    bool value = isEmpty(container, messageTotal);
+    if (!value) {
+        int i = 0;
+        for (auto row : container) {
+            if (row.empty()) {
+                SDL_Log("%s %d", messageComponent, i);
+                value = true;
+                i++;
+            }
+        }
+    }
+    return value;
+}
+/**
+ * Flexible emptiness check for safe handling
+ * \param container data structure to be tested
+ * \param message log message on total emptiness
+ */
+template <typename T>
+static bool isEmpty(T container, const char *message) {
+    if (container.empty()) {
+        SDL_Log("%s", message);
+        return true;
+    }
+    return false;
+}
+

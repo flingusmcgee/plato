@@ -48,3 +48,7 @@ struct Entity {
 static std::vector<Entity> entityOrder = { };
 
 static void loadGameData(GameData external);
+template <typename T>
+static bool isEmpty(std::vector<std::vector<T>> container, const char *messageTotal, const char *messageComponent);
+template <typename T>
+static bool isEmpty(T container, const char *message);
