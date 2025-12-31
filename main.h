@@ -1,21 +1,12 @@
 #pragma once
-#include "reader.h"
 #include <SDL3/SDL.h>
+#include <SDL3_image/SDL_image.h>
 #include <string>
 #include <vector>
 
 static std::vector<SDL_Texture *> playerSpriteList = { };
 static std::vector<SDL_Texture *> npcSpriteList    = { };
 static std::vector<SDL_Texture *> mapTileList      = { };
-
-static int SCREENWIDTH;
-static int SCREENHEIGHT;
-
-static float SPEED;
-
-static std::vector<std::string> SPRITEPATHS = { };
-static std::vector<std::string> NPCPATHS = { };
-static std::vector<std::string> TILEPATHS = { };
 
 enum Tileset {
     BLANK,
@@ -31,23 +22,29 @@ enum NPCset {
     LOLLI,
 };
 
-static int SPRITEWIDTH;
-static int SPRITEHEIGHT;
-static int TILEWIDTH;
-static int TILEHEIGHT;
-static int MAPWIDTH;
-static int MAPHEIGHT;
-static std::vector<std::vector<int>> MAP = { };
-static std::vector<std::vector<int>> NPC = { };
+struct GameData {
+    int SCREENWIDTH;
+    int SCREENHEIGHT;
+    float SPEED;
+    std::vector<std::string> SPRITEPATHS;
+    std::vector<std::string> NPCPATHS;
+    std::vector<std::string> TILEPATHS;
+    int SPRITEWIDTH;
+    int SPRITEHEIGHT;
+    int TILEWIDTH;
+    int TILEHEIGHT;
+    int MAPWIDTH;
+    int MAPHEIGHT;
+    std::vector<std::vector<int>> MAP;
+    std::vector<std::vector<int>> NPC;
+};
 
 struct Entity {
     std::string name;
-    SDL_Texture **texture;
+    SDL_Texture *texture;
     SDL_FRect rect;
 };
 
 static std::vector<Entity> entityOrder = { };
 
-static SDL_AppResult loadTexture(std::string filePath, std::vector<SDL_Texture *> *destination);
-static void orderEntity(std::string name, SDL_Texture **texture, SDL_FRect rect);
-static void loadGameData(ExternalData external);
+static void loadGameData(GameData external);

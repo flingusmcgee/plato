@@ -1,44 +1,39 @@
 #define SDL_MAIN_USE_CALLBACKS 1  /* use the callbacks instead of main() */
-#include "main.h"
-#include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
-#include <SDL3_image/SDL_image.h>
-#include <string>
-#include <vector>
+#include "main.h"
+#include "src/Reader.h"
+#include "src/Asset.h"
+#include "src/Camera.h"
+#include "src/Render.h"
 
 static SDL_Window   *window   = NULL;
 static SDL_Renderer *renderer = NULL;
-static SDL_Texture  *texture  = NULL;
+static GameData game;
 
 /* This function runs once at startup. */
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
+    SDL_SetAppMetadata("plato game", "0.0", "com.plato.elmegacorp");
+
     /* Initialize with external data */
     Reader reader;
     loadGameData(reader.readGameData());
-
-    SDL_SetAppMetadata("plato game", "0.0", "com.plato.elmegacorp");
 
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
 
-    if (!SDL_CreateWindowAndRenderer("Plato", SCREENWIDTH, SCREENHEIGHT, SDL_WINDOW_RESIZABLE, &window, &renderer)) {
+    if (!SDL_CreateWindowAndRenderer("Plato", game.SCREENWIDTH, game.SCREENHEIGHT, SDL_WINDOW_RESIZABLE, &window, &renderer)) {
         SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
-    SDL_SetRenderLogicalPresentation(renderer, SCREENWIDTH, SCREENHEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
-    
+    SDL_SetRenderLogicalPresentation(renderer, game.SCREENWIDTH, game.SCREENHEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+
     /* Load assets into SDL_Texture lists */
-    for (int i = 0; i < SPRITEPATHS.size(); i++) {
-        loadTexture(SPRITEPATHS.at(i), &playerSpriteList);
-    }
-    for (int i = 0; i < NPCPATHS.size(); i++) {
-        loadTexture(NPCPATHS.at(i), &npcSpriteList);
-    }
-    for (int i = 0; i < TILEPATHS.size(); i++) {
-        loadTexture(TILEPATHS.at(i), &mapTileList);
-    }
+    Asset asset;
+    playerSpriteList = asset.loadTexturesInto(renderer, game.SPRITEPATHS);
+    npcSpriteList = asset.loadTexturesInto(renderer, game.NPCPATHS);
+    mapTileList = asset.loadTexturesInto(renderer, game.TILEPATHS);
 
     return SDL_APP_CONTINUE;
 }
@@ -57,119 +52,47 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_SetRenderDrawColor(renderer, 249, 245, 236, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
-    static float camx { 0 };
-    static float camy { 0 };
-    static int dir { 0 };
-
-    /* Controls */
-    const bool *code = SDL_GetKeyboardState(NULL);
-    if (code[SDL_SCANCODE_W] || code[SDL_SCANCODE_UP]) {
-        camy -= SPEED;
-        dir = 0;
-    }
-    else if (code[SDL_SCANCODE_D] || code[SDL_SCANCODE_RIGHT]) {
-        camx += SPEED;
-        dir = 90;
-    }
-    else if (code[SDL_SCANCODE_S] || code[SDL_SCANCODE_DOWN]) {
-        camy += SPEED;
-        dir = 180;
-    }
-    else if (code[SDL_SCANCODE_A] || code[SDL_SCANCODE_LEFT]) {
-        camx -= SPEED;
-        dir = 270;
-    }
-
     SDL_FRect player;
     SDL_FRect npc;
     SDL_FRect tile;
 
-    player.w = SPRITEWIDTH;
-    player.h = SPRITEHEIGHT;
-    npc.w = TILEWIDTH;
-    npc.h = TILEHEIGHT;
-    tile.w = TILEWIDTH;
-    tile.h = TILEHEIGHT;
+    player.w = game.SPRITEWIDTH;
+    player.h = game.SPRITEHEIGHT;
+    npc.w = game.TILEWIDTH;
+    npc.h = game.TILEHEIGHT;
+    tile.w = game.TILEWIDTH;
+    tile.h = game.TILEHEIGHT;
 
-    /* Constrain the camera to map dimensions */
-    int tilex, tiley;
-    int playerx, playery;
-    if (camx >= 0 && camx <= TILEWIDTH * MAPWIDTH - SCREENWIDTH) {
-        tilex = -camx;
-        playerx = (SCREENWIDTH - SPRITEWIDTH) / 2;
-    }
-    else {
-        if (camx < 0) {
-            tilex = 0;
-            playerx = (SCREENWIDTH - SPRITEWIDTH) / 2 + camx;
-        }
-        else {
-            tilex = -(TILEWIDTH * MAPWIDTH - SCREENWIDTH);
-            playerx = (SCREENWIDTH - SPRITEWIDTH) / 2 - (TILEWIDTH * MAPWIDTH - SCREENWIDTH) + camx;
-        }
-    }
-    if (camy >= 0 && camy <= TILEHEIGHT * MAPHEIGHT - SCREENHEIGHT) {
-        tiley = -camy;
-        playery = (SCREENHEIGHT - SPRITEHEIGHT) / 2;
-    }
-    else {
-        if (camy < 0) {
-            tiley = 0;
-            playery = (SCREENHEIGHT - SPRITEHEIGHT) / 2 + camy;
-        }
-        else {
-            tiley = -(TILEHEIGHT * MAPHEIGHT - SCREENHEIGHT);
-            playery = (SCREENHEIGHT - SPRITEHEIGHT) / 2 - (TILEHEIGHT * MAPHEIGHT - SCREENHEIGHT) + camy;
-        }
-    }
-    player.x = playerx;
-    player.y = playery;
-    tile.x = tilex;
-    tile.y = tiley;
+    /* Camera and controls */
+    static Camera cam;
+    cam.updateCamera(game, player, tile);
 
     /* Render the map tiles */
-    entityOrder = { };
-    int renderedTiles = 0;
-    for (int i = 0; i < MAPHEIGHT; i++) {
-        for (int j = 0; j < MAPWIDTH; j++) {
-            if (tile.x > -TILEWIDTH && tile.x < SCREENWIDTH && tile.y > -TILEHEIGHT && tile.y < SCREENHEIGHT) {
-                SDL_RenderTexture(renderer, mapTileList.at(MAP[i][j]), NULL, &tile);
-                /* Queue entity processing if applicable */
-                npc.x = tile.x;
-                npc.y = tile.y;
-                if (NPC[i][j] > EMPTY) {
-                    orderEntity(NPCPATHS[NPC[i][j]], &npcSpriteList.at(NPC[i][j]), npc);
-                }
-                renderedTiles += 1;
-            }
-            tile.x += TILEWIDTH;
-        }
-        tile.x = tilex;
-        tile.y += TILEHEIGHT;
-    }
+    static Render render;
+    entityOrder = render.renderMap(game, renderer, tile, mapTileList, npc, npcSpriteList, cam.tilex);
 
     /* Render the entities */
-    orderEntity(SPRITEPATHS[dir/90], &playerSpriteList.at(dir/90), player);
+    entityOrder = render.orderEntity(game, game.SPRITEPATHS[cam.dir/90], playerSpriteList.at(cam.dir/90), player);
     for (Entity entity : entityOrder) {
-        SDL_RenderTexture(renderer, *entity.texture, NULL, &entity.rect);
+        SDL_RenderTexture(renderer, entity.texture, NULL, &entity.rect);
     }
 
     /* Line so it's canon */
     SDL_SetRenderDrawColor(renderer, 0, 0, 255, SDL_ALPHA_OPAQUE);
-    SDL_RenderLine(renderer, 0, 0, SCREENWIDTH, SCREENHEIGHT);
+    SDL_RenderLine(renderer, 0, 0, game.SCREENWIDTH, game.SCREENHEIGHT);
 
     /* Debug text */
-    SDL_RenderDebugTextFormat(renderer, 10, 10, "x: %f", camx);
-    SDL_RenderDebugTextFormat(renderer, 10, 20, "y: %f", camy);
-    SDL_RenderDebugTextFormat(renderer, 10, 30, "tilex: %d", tilex);
-    SDL_RenderDebugTextFormat(renderer, 10, 40, "tiley: %d", tiley);
-    SDL_RenderDebugTextFormat(renderer, 10, 50, "facing: %d", dir);
-    SDL_RenderDebugTextFormat(renderer, 10, 60, "rendered tiles: %d", renderedTiles);
+    SDL_RenderDebugTextFormat(renderer, 10, 10, "x: %f", cam.x);
+    SDL_RenderDebugTextFormat(renderer, 10, 20, "y: %f", cam.y);
+    SDL_RenderDebugTextFormat(renderer, 10, 30, "tilex: %d", cam.tilex);
+    SDL_RenderDebugTextFormat(renderer, 10, 40, "tiley: %d", cam.tiley);
+    SDL_RenderDebugTextFormat(renderer, 10, 50, "facing: %d", cam.dir);
+    SDL_RenderDebugTextFormat(renderer, 10, 60, "rendered tiles: %d", render.renderedTiles);
     SDL_SetRenderScale(renderer, 2, 2);
     SDL_RenderDebugText(renderer, 100, 50, "Waiting for something?");
     SDL_SetRenderScale(renderer, 1, 1);
     for (int i = 0; i < entityOrder.size(); i++) {
-        SDL_RenderDebugTextFormat(renderer, 10, SCREENHEIGHT - (entityOrder.size() - i) * 10, "%s %.1f %.1f", entityOrder[i].name.c_str(), entityOrder[i].rect.x, entityOrder[i].rect.y);
+        SDL_RenderDebugTextFormat(renderer, 10, game.SCREENHEIGHT - (entityOrder.size() - i) * 10, "%s %.1f %.1f", entityOrder[i].name.c_str(), entityOrder[i].rect.x, entityOrder[i].rect.y);
     }
 
     /* Show time! */
@@ -180,7 +103,6 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
 /* This function runs once at shutdown. */
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
-    SDL_DestroyTexture(texture);
     for (SDL_Texture *bits : playerSpriteList) {
         SDL_DestroyTexture(bits);
     }
@@ -195,66 +117,19 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
 }
 
 /* Initialize game data using reader.cpp */
-static void loadGameData(ExternalData external) {
-    SCREENWIDTH  = external.SCREENWIDTH;
-    SCREENHEIGHT = external.SCREENHEIGHT;
-    SPEED        = external.SPEED;
-    SPRITEPATHS  = external.SPRITEPATHS;
-    NPCPATHS     = external.NPCPATHS;
-    TILEPATHS    = external.TILEPATHS;
-    SPRITEWIDTH  = external.SPRITEWIDTH;
-    SPRITEHEIGHT = external.SPRITEHEIGHT;
-    TILEWIDTH    = external.TILEWIDTH;
-    TILEHEIGHT   = external.TILEHEIGHT;
-    MAPWIDTH     = external.MAPWIDTH;
-    MAPHEIGHT    = external.MAPHEIGHT;
-    MAP          = external.MAP;
-    NPC          = external.NPC;
-}
-
-/* Loads texture assets and adds them to a suitable container SDL_Texture list for quick reference. */
-static SDL_AppResult loadTexture(std::string filePath, std::vector<SDL_Texture *> *destination) {
-    char *path = NULL;
-    SDL_Surface *surface = NULL;
-
-    SDL_asprintf(&path, filePath.c_str(), SDL_GetBasePath());
-
-    surface = IMG_Load(path);
-    if (!surface) {
-        SDL_Log("Surface load failed: %s", SDL_GetError());
-        return SDL_APP_FAILURE;
-    }
-
-    texture = SDL_CreateTextureFromSurface(renderer, surface);
-    if (!texture) {
-        SDL_Log("Texture conversion failure: %s", SDL_GetError());
-        return SDL_APP_FAILURE;
-    }
-
-    destination->push_back(texture);
-
-    texture = NULL;
-    SDL_free(path);
-    SDL_DestroySurface(surface);
-    return SDL_APP_CONTINUE;
-}
-
-/* Aligns entities to a pseudo z-index in preparation of rendering */
-static void orderEntity(std::string name, SDL_Texture **texture, SDL_FRect rect) {
-    if (!entityOrder.size()) {
-        entityOrder.push_back({name, texture, rect});
-    }
-    else {
-        auto i = entityOrder.begin();
-        for (Entity entity : entityOrder) {
-            if (rect.y - (TILEHEIGHT - rect.h) <= entity.rect.y) {
-                entityOrder.insert(i, {name, texture, rect});
-                break;
-            }
-            i++;
-        }
-        if (rect.y - (TILEHEIGHT - rect.h) > entityOrder.back().rect.y) {
-            entityOrder.push_back({name, texture, rect});
-        }
-    }
+static void loadGameData(GameData external) {
+    game.SCREENWIDTH  = external.SCREENWIDTH;
+    game.SCREENHEIGHT = external.SCREENHEIGHT;
+    game.SPEED        = external.SPEED;
+    game.SPRITEPATHS  = external.SPRITEPATHS;
+    game.NPCPATHS     = external.NPCPATHS;
+    game.TILEPATHS    = external.TILEPATHS;
+    game.SPRITEWIDTH  = external.SPRITEWIDTH;
+    game.SPRITEHEIGHT = external.SPRITEHEIGHT;
+    game.TILEWIDTH    = external.TILEWIDTH;
+    game.TILEHEIGHT   = external.TILEHEIGHT;
+    game.MAPWIDTH     = external.MAPWIDTH;
+    game.MAPHEIGHT    = external.MAPHEIGHT;
+    game.MAP          = external.MAP;
+    game.NPC          = external.NPC;
 }

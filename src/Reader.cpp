@@ -1,16 +1,16 @@
-#include "reader.h"
+#include "Reader.h"
 #include <map>
 #include <json/json.h>
 #include <iostream>
 #include <fstream>
 
 /* Access external memory and confirm initialization */
-ExternalData Reader::readGameData() {
+GameData Reader::readGameData() {
     std::ifstream file("data/data.json", std::ifstream::binary);
     Json::Value data;
     file >> data;
 
-    ExternalData external;
+    GameData external;
 
     external.SCREENWIDTH = data["screen"]["width"].asInt();
     external.SCREENHEIGHT = data["screen"]["height"].asInt();
