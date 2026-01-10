@@ -9,6 +9,7 @@
 static SDL_Window   *window   = NULL;
 static SDL_Renderer *renderer = NULL;
 static GameData game;
+static Text text;
 
 /* This function runs once at startup. */
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
@@ -27,6 +28,11 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
         SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
+
+    if (!TTF_Init()) {
+        SDL_Log("Couldn't initialize SDL_ttf: %s", SDL_GetError());
+        return SDL_APP_FAILURE;
+    }
     SDL_SetRenderLogicalPresentation(renderer, game.SCREENWIDTH, game.SCREENHEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
     /* Load assets into SDL_Texture lists */
@@ -41,6 +47,10 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
         mapTileList = asset.loadTexturesInto(renderer, game.TILEPATHS);
     }
 
+    TTF_Font *font = asset.loadFont("assets/Barriecito-Regular.ttf", 300); 
+    text = asset.loadFontTexture(renderer, font, "Waiting for something?", { 0, 0, 0, 255 });
+
+    TTF_CloseFont(font);
     return SDL_APP_CONTINUE;
 }
 
@@ -87,6 +97,10 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 255, SDL_ALPHA_OPAQUE);
     SDL_RenderLine(renderer, 0, 0, game.SCREENWIDTH, game.SCREENHEIGHT);
 
+    /* In-game narration */
+    SDL_FRect textbox = { 100, game.SCREENHEIGHT - 100.0f, text.w * 0.1f, text.h * 0.1f };
+    SDL_RenderTexture(renderer, text.texture, NULL, &textbox);
+
     /* Debug text */
     SDL_RenderDebugTextFormat(renderer, 10, 10, "x: %f", cam.x);
     SDL_RenderDebugTextFormat(renderer, 10, 20, "y: %f", cam.y);
@@ -94,11 +108,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_RenderDebugTextFormat(renderer, 10, 40, "tiley: %d", cam.tiley);
     SDL_RenderDebugTextFormat(renderer, 10, 50, "facing: %d", cam.dir);
     SDL_RenderDebugTextFormat(renderer, 10, 60, "rendered tiles: %d", render.renderedTiles);
-    SDL_SetRenderScale(renderer, 2, 2);
-    SDL_RenderDebugText(renderer, 100, 50, "Waiting for something?");
-    SDL_SetRenderScale(renderer, 1, 1);
-    for (int i = 0; i < entityOrder.size(); i++) {
-        SDL_RenderDebugTextFormat(renderer, 10, game.SCREENHEIGHT - (entityOrder.size() - i) * 10, "%s %.1f %.1f", entityOrder[i].name.c_str(), entityOrder[i].rect.x, entityOrder[i].rect.y);
+    for (int i = 0; i < entityOrder.size(); ++i) {
+        SDL_RenderDebugTextFormat(renderer, 10, game.SCREENHEIGHT - (entityOrder.size() - i) * 10, "%.*s %.1f %.1f", static_cast<int>(entityOrder[i].name.length()), entityOrder[i].name.data(), entityOrder[i].rect.x, entityOrder[i].rect.y);
     }
 
     /* Show time! */
@@ -118,7 +129,9 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     for (SDL_Texture *bits : mapTileList) {
         SDL_DestroyTexture(bits);
     }
-    
+
+    SDL_DestroyTexture(text.texture);
+    TTF_Quit();
     /* SDL will clean up the window/renderer for us. */
 }
 
@@ -174,4 +187,3 @@ static bool isEmpty(T container, const char *message) {
     }
     return false;
 }
-

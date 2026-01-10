@@ -1,7 +1,9 @@
 #pragma once
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
+#include <SDL3_ttf/SDL_ttf.h>
 #include <string>
+#include <string_view>
 #include <vector>
 
 static std::vector<SDL_Texture *> playerSpriteList = { };
@@ -18,7 +20,7 @@ enum Tileset {
 };
 
 enum NPCset {
-    EMPTY = -1,
+    EMPTY,
     LOLLI,
 };
 
@@ -40,9 +42,15 @@ struct GameData {
 };
 
 struct Entity {
-    std::string name;
+    std::string_view name;
     SDL_Texture *texture;
     SDL_FRect rect;
+};
+
+struct Text {
+    SDL_Texture *texture;
+    float w;
+    float h;
 };
 
 static std::vector<Entity> entityOrder = { };

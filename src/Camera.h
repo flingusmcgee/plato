@@ -3,8 +3,7 @@
 
 class Camera {
     public:
-        float x;
-        float y;
+        float x, y;
         int dir;
         int tilex, tiley;
         int playerx, playery;

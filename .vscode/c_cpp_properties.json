@@ -6,6 +6,7 @@
                 "${default}",
                 "C:\\Program Files\\SDL3\\x86_64-w64-mingw32\\include",
                 "C:\\Program Files\\SDL3_image\\x86_64-w64-mingw32\\include",
+                "C:\\Program Files\\SDL3_ttf\\x86_64-w64-mingw32\\include",
                 "C:\\Program Files\\jsoncpp\\include"
             ],
             "defines": [

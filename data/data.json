@@ -21,9 +21,11 @@
             "width": 128,
             "height": 128,
             "texture": [
+                "",
                 "assets/lollipop.png"
             ],
             "id": [
+                "EMPTY",
                 "LOLLI"
             ]
         }

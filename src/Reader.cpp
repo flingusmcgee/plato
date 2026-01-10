@@ -36,14 +36,14 @@ GameData Reader::readGameData() {
 
     /* Obtain tileset identifiers */
     std::map<std::string, int> tileset = { };
-    for (int i = 0; i < data["map"]["id"].size(); i++) {
+    for (int i = 0; i < data["map"]["id"].size(); ++i) {
         tileset[data["map"]["id"][i].asString()] = i;
     }
 
     /* Convert identifiers to integers */
     std::vector<int> row = { };
-    for (int i = 0; i < external.MAPHEIGHT; i++) {
-        for (int j = 0; j < external.MAPWIDTH; j++) {
+    for (int i = 0; i < external.MAPHEIGHT; ++i) {
+        for (int j = 0; j < external.MAPWIDTH; ++j) {
             row.push_back(tileset[data["layout"]["map"][j + i * external.MAPWIDTH].asString()]);
         }
         external.MAP.push_back(row);
@@ -52,21 +52,15 @@ GameData Reader::readGameData() {
 
     /* Obtain spriteset identifiers */
     std::map<std::string, int> npcset = { };
-    for (int i = 0; i < data["entity"]["npc"]["id"].size(); i++) {
+    for (int i = 0; i < data["entity"]["npc"]["id"].size(); ++i) {
         npcset[data["entity"]["npc"]["id"][i].asString()] = i;
     }
 
     /* Convert identifiers to integers */
     row = { };
-    for (int i = 0; i < external.MAPHEIGHT; i++) {
-        for (int j = 0; j < external.MAPWIDTH; j++) {
-            /* EMPTY sprite case - render nothing */
-            if (data["layout"]["npc"][j + i * external.MAPWIDTH].asString() == "EMPTY") {
-                row.push_back(-1);
-            }
-            else {
-                row.push_back(npcset[data["layout"]["npc"][j + i * external.MAPWIDTH].asString()]);
-            }
+    for (int i = 0; i < external.MAPHEIGHT; ++i) {
+        for (int j = 0; j < external.MAPWIDTH; ++j) {
+            row.push_back(npcset[data["layout"]["npc"][j + i * external.MAPWIDTH].asString()]);
         }
         external.NPC.push_back(row);
         row = { };
