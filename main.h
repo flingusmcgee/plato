@@ -31,10 +31,10 @@ struct GameData {
     std::vector<std::string> SPRITEPATHS;
     std::vector<std::string> NPCPATHS;
     std::vector<std::string> TILEPATHS;
-    int SPRITEWIDTH;
-    int SPRITEHEIGHT;
-    int TILEWIDTH;
-    int TILEHEIGHT;
+    float SPRITEWIDTH;
+    float SPRITEHEIGHT;
+    float TILEWIDTH;
+    float TILEHEIGHT;
     int MAPWIDTH;
     int MAPHEIGHT;
     std::vector<std::vector<int>> MAP;

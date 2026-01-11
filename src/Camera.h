@@ -1,12 +1,14 @@
 #pragma once
 #include "../main.h"
 
+static SDL_Gamepad *gamepad;
+
 class Camera {
     public:
         float x, y;
         int dir;
-        int tilex, tiley;
-        int playerx, playery;
+        float tilex, tiley;
+        float playerx, playery;
 
-        void updateCamera(GameData& game, SDL_FRect& player, SDL_FRect& tile);
+        void updateCamera(GameData& game, SDL_Gamepad *gamepad, SDL_FRect& player, SDL_FRect& tile);
 };

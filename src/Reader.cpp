@@ -27,10 +27,10 @@ GameData Reader::readGameData() {
         external.TILEPATHS.push_back(string.asString());
     }
 
-    external.SPRITEWIDTH = data["entity"]["width"].asInt();
-    external.SPRITEHEIGHT = data["entity"]["height"].asInt();
-    external.TILEWIDTH = data["map"]["tilewidth"].asInt();
-    external.TILEHEIGHT = data["map"]["tileheight"].asInt();
+    external.SPRITEWIDTH = data["entity"]["width"].asFloat();
+    external.SPRITEHEIGHT = data["entity"]["height"].asFloat();
+    external.TILEWIDTH = data["map"]["tilewidth"].asFloat();
+    external.TILEHEIGHT = data["map"]["tileheight"].asFloat();
     external.MAPWIDTH = data["map"]["mapwidth"].asInt();
     external.MAPHEIGHT = data["map"]["mapheight"].asInt();
 
@@ -71,10 +71,10 @@ GameData Reader::readGameData() {
     std::printf("SCREENWIDTH: %d\n", external.SCREENWIDTH);
     std::printf("SCREENHEIGHT: %d\n", external.SCREENHEIGHT);
     std::printf("SPEED: %.1f\n", external.SPEED);
-    std::printf("SPRITEWIDTH: %d\n", external.SPRITEWIDTH);
-    std::printf("SPRITEHEIGHT: %d\n", external.SPRITEHEIGHT);
-    std::printf("TILEWIDTH: %d\n", external.TILEWIDTH);
-    std::printf("TILEHEIGHT: %d\n", external.TILEHEIGHT);
+    std::printf("SPRITEWIDTH: %.1f\n", external.SPRITEWIDTH);
+    std::printf("SPRITEHEIGHT: %.1f\n", external.SPRITEHEIGHT);
+    std::printf("TILEWIDTH: %.1f\n", external.TILEWIDTH);
+    std::printf("TILEHEIGHT: %.1f\n", external.TILEHEIGHT);
     std::printf("MAPWIDTH: %d\n", external.MAPWIDTH);
     std::printf("MAPHEIGHT: %d\n", external.MAPHEIGHT);
 

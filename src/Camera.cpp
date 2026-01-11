@@ -1,22 +1,25 @@
 #include "Camera.h"
 
 /* Manage scrolling background/moving player based on keypresses and map borders */
-void Camera::updateCamera(GameData& game, SDL_FRect& player, SDL_FRect& tile) {
+void Camera::updateCamera(GameData& game, SDL_Gamepad *gamepad, SDL_FRect& player, SDL_FRect& tile) {
     /* Controls */
     const bool *code = SDL_GetKeyboardState(NULL);
-    if (code[SDL_SCANCODE_W] || code[SDL_SCANCODE_UP]) {
+
+    short leftx = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX);
+    short lefty = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY);
+    if (code[SDL_SCANCODE_W] || code[SDL_SCANCODE_UP] || (lefty < -10000 && SDL_abs(lefty) > SDL_abs(leftx))) {
         y -= game.SPEED;
         dir = 0;
     }
-    else if (code[SDL_SCANCODE_D] || code[SDL_SCANCODE_RIGHT]) {
+    else if (code[SDL_SCANCODE_D] || code[SDL_SCANCODE_RIGHT] || (leftx > 10000 && SDL_abs(leftx) > abs(lefty))) {
         x += game.SPEED;
         dir = 90;
     }
-    else if (code[SDL_SCANCODE_S] || code[SDL_SCANCODE_DOWN]) {
+    else if (code[SDL_SCANCODE_S] || code[SDL_SCANCODE_DOWN] || (lefty > 10000 && SDL_abs(lefty) > SDL_abs(leftx))) {
         y += game.SPEED;
         dir = 180;
     }
-    else if (code[SDL_SCANCODE_A] || code[SDL_SCANCODE_LEFT]) {
+    else if (code[SDL_SCANCODE_A] || code[SDL_SCANCODE_LEFT] || (leftx < -10000 && SDL_abs(leftx) > abs(lefty))) {
         x -= game.SPEED;
         dir = 270;
     }
@@ -55,8 +58,8 @@ void Camera::updateCamera(GameData& game, SDL_FRect& player, SDL_FRect& tile) {
         }
     }
     
-    player.x = playerx;
-    player.y = playery;
     tile.x = tilex;
     tile.y = tiley;
+    player.x = playerx;
+    player.y = playery;
 }

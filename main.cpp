@@ -19,7 +19,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     Reader reader;
     loadGameData(reader.readGameData());
 
-    if (!SDL_Init(SDL_INIT_VIDEO)) {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
         SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
@@ -59,6 +59,18 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     if (event->type == SDL_EVENT_QUIT) {
         return SDL_APP_SUCCESS;
     }
+    if (event->type == SDL_EVENT_GAMEPAD_ADDED) {
+        SDL_Log("Gamepad inserted: %u", (unsigned int) event->gdevice.which);
+        gamepad = SDL_OpenGamepad(event->gdevice.which);
+        if (!gamepad) {
+            SDL_Log("Gamepad not detected");
+        }
+    }
+    if (event->type == SDL_EVENT_GAMEPAD_REMOVED) {
+        SDL_Log("Gamepad disconnected");
+        SDL_CloseGamepad(gamepad);
+        gamepad = NULL;
+    }
 
     return SDL_APP_CONTINUE;
 }
@@ -68,20 +80,13 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_SetRenderDrawColor(renderer, 249, 245, 236, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
-    SDL_FRect player;
-    SDL_FRect npc;
-    SDL_FRect tile;
-
-    player.w = game.SPRITEWIDTH;
-    player.h = game.SPRITEHEIGHT;
-    npc.w = game.TILEWIDTH;
-    npc.h = game.TILEHEIGHT;
-    tile.w = game.TILEWIDTH;
-    tile.h = game.TILEHEIGHT;
+    SDL_FRect player { 0, 0, game.SPRITEWIDTH, game.SPRITEHEIGHT };
+    SDL_FRect npc    { 0, 0, game.TILEWIDTH, game.TILEHEIGHT };
+    SDL_FRect tile   { 0, 0, game.TILEWIDTH, game.TILEHEIGHT };
 
     /* Camera and controls */
     static Camera cam;
-    cam.updateCamera(game, player, tile);
+    cam.updateCamera(game, gamepad, player, tile);
 
     /* Render the map tiles */
     static Render render;
@@ -102,12 +107,13 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_RenderTexture(renderer, text.texture, NULL, &textbox);
 
     /* Debug text */
-    SDL_RenderDebugTextFormat(renderer, 10, 10, "x: %f", cam.x);
-    SDL_RenderDebugTextFormat(renderer, 10, 20, "y: %f", cam.y);
-    SDL_RenderDebugTextFormat(renderer, 10, 30, "tilex: %d", cam.tilex);
-    SDL_RenderDebugTextFormat(renderer, 10, 40, "tiley: %d", cam.tiley);
+    SDL_RenderDebugTextFormat(renderer, 10, 10, "x: %.1f", cam.x);
+    SDL_RenderDebugTextFormat(renderer, 10, 20, "y: %.1f", cam.y);
+    SDL_RenderDebugTextFormat(renderer, 10, 30, "tilex: %.1f", cam.tilex);
+    SDL_RenderDebugTextFormat(renderer, 10, 40, "tiley: %.1f", cam.tiley);
     SDL_RenderDebugTextFormat(renderer, 10, 50, "facing: %d", cam.dir);
     SDL_RenderDebugTextFormat(renderer, 10, 60, "rendered tiles: %d", render.renderedTiles);
+    SDL_RenderDebugTextFormat(renderer, 10, 70, "input: %s", gamepad ? SDL_GetGamepadName(gamepad) : "keyboard");
     for (int i = 0; i < entityOrder.size(); ++i) {
         SDL_RenderDebugTextFormat(renderer, 10, game.SCREENHEIGHT - (entityOrder.size() - i) * 10, "%.*s %.1f %.1f", static_cast<int>(entityOrder[i].name.length()), entityOrder[i].name.data(), entityOrder[i].rect.x, entityOrder[i].rect.y);
     }
@@ -132,6 +138,8 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
 
     SDL_DestroyTexture(text.texture);
     TTF_Quit();
+
+    SDL_CloseGamepad(gamepad);
     /* SDL will clean up the window/renderer for us. */
 }
 
