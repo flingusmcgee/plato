@@ -1,6 +1,6 @@
 #define SDL_MAIN_USE_CALLBACKS 1  /* use the callbacks instead of main() */
 #include <SDL3/SDL_main.h>
-#include "main.h"
+#include "src/Game.h"
 #include "src/Reader.h"
 #include "src/Asset.h"
 #include "src/Camera.h"
@@ -8,8 +8,7 @@
 
 static SDL_Window   *window   = NULL;
 static SDL_Renderer *renderer = NULL;
-static GameData game;
-static Text text;
+static Game game;
 
 /* This function runs once at startup. */
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
@@ -17,7 +16,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
 
     /* Initialize with external data */
     Reader reader;
-    loadGameData(reader.readGameData());
+    game.loadGameData(reader.readGameData());
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
         SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
@@ -37,18 +36,18 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
 
     /* Load assets into SDL_Texture lists */
     Asset asset;
-    if (!isEmpty(game.SPRITEPATHS, "Empty SPRITEPATHS")) {
+    if (!game.isEmpty(game.SPRITEPATHS, "Empty SPRITEPATHS")) {
         playerSpriteList = asset.loadTexturesInto(renderer, game.SPRITEPATHS);
     }
-    if (!isEmpty(game.NPCPATHS, "Empty NPCPATHS")) {
+    if (!game.isEmpty(game.NPCPATHS, "Empty NPCPATHS")) {
         npcSpriteList = asset.loadTexturesInto(renderer, game.NPCPATHS);
     }
-    if (!isEmpty(game.TILEPATHS, "Empty TILEPATHS")) {
+    if (!game.isEmpty(game.TILEPATHS, "Empty TILEPATHS")) {
         mapTileList = asset.loadTexturesInto(renderer, game.TILEPATHS);
     }
 
     TTF_Font *font = asset.loadFont("assets/Barriecito-Regular.ttf", 300); 
-    text = asset.loadFontTexture(renderer, font, "Waiting for something?", { 0, 0, 0, 255 });
+    game.text = asset.loadFontTexture(renderer, font, "Waiting for something?", { 0, 0, 0, 255 });
 
     TTF_CloseFont(font);
     return SDL_APP_CONTINUE;
@@ -60,7 +59,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
         return SDL_APP_SUCCESS;
     }
     if (event->type == SDL_EVENT_GAMEPAD_ADDED) {
-        SDL_Log("Gamepad inserted: %u", (unsigned int) event->gdevice.which);
+        SDL_Log("Gamepad inserted: %u", event->gdevice.which);
         gamepad = SDL_OpenGamepad(event->gdevice.which);
         if (!gamepad) {
             SDL_Log("Gamepad not detected");
@@ -103,8 +102,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_RenderLine(renderer, 0, 0, game.SCREENWIDTH, game.SCREENHEIGHT);
 
     /* In-game narration */
-    SDL_FRect textbox = { 100, game.SCREENHEIGHT - 100.0f, text.w * 0.1f, text.h * 0.1f };
-    SDL_RenderTexture(renderer, text.texture, NULL, &textbox);
+    SDL_FRect textbox = { 100, game.SCREENHEIGHT - 100.0f, game.text.w * 0.1f, game.text.h * 0.1f };
+    SDL_RenderTexture(renderer, game.text.texture, NULL, &textbox);
 
     /* Debug text */
     SDL_RenderDebugTextFormat(renderer, 10, 10, "x: %.1f", cam.x);
@@ -136,62 +135,9 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
         SDL_DestroyTexture(bits);
     }
 
-    SDL_DestroyTexture(text.texture);
+    SDL_DestroyTexture(game.text.texture);
     TTF_Quit();
 
     SDL_CloseGamepad(gamepad);
     /* SDL will clean up the window/renderer for us. */
-}
-
-/* Initialize game data using reader.cpp */
-static void loadGameData(GameData external) {
-    game.SCREENWIDTH  = external.SCREENWIDTH;
-    game.SCREENHEIGHT = external.SCREENHEIGHT;
-    game.SPEED        = external.SPEED;
-    game.SPRITEPATHS  = external.SPRITEPATHS;
-    game.NPCPATHS     = external.NPCPATHS;
-    game.TILEPATHS    = external.TILEPATHS;
-    game.SPRITEWIDTH  = external.SPRITEWIDTH;
-    game.SPRITEHEIGHT = external.SPRITEHEIGHT;
-    game.TILEWIDTH    = external.TILEWIDTH;
-    game.TILEHEIGHT   = external.TILEHEIGHT;
-    game.MAPWIDTH     = external.MAPWIDTH;
-    game.MAPHEIGHT    = external.MAPHEIGHT;
-    game.MAP          = external.MAP;
-    game.NPC          = external.NPC;
-}
-
-/**
- * Flexible emptiness check for safe handling - Multi-Dimensional Edition
- * \param container multi-dimensional data structure to be tested
- * \param messageTotal log message on total emptiness
- * \param messageComponent log message on individual emptiness
- */
-template <typename T>
-static bool isEmpty(std::vector<std::vector<T>> container, const char *messageTotal, const char *messageComponent) {
-    bool value = isEmpty(container, messageTotal);
-    if (!value) {
-        int i = 0;
-        for (auto row : container) {
-            if (row.empty()) {
-                SDL_Log("%s %d", messageComponent, i);
-                value = true;
-                i++;
-            }
-        }
-    }
-    return value;
-}
-/**
- * Flexible emptiness check for safe handling
- * \param container data structure to be tested
- * \param message log message on total emptiness
- */
-template <typename T>
-static bool isEmpty(T container, const char *message) {
-    if (container.empty()) {
-        SDL_Log("%s", message);
-        return true;
-    }
-    return false;
 }

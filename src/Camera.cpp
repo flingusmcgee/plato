@@ -1,7 +1,7 @@
 #include "Camera.h"
 
 /* Manage scrolling background/moving player based on keypresses and map borders */
-void Camera::updateCamera(GameData& game, SDL_Gamepad *gamepad, SDL_FRect& player, SDL_FRect& tile) {
+void Camera::updateCamera(Game& game, SDL_Gamepad *gamepad, SDL_FRect& player, SDL_FRect& tile) {
     /* Controls */
     const bool *code = SDL_GetKeyboardState(NULL);
 

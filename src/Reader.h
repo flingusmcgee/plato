@@ -1,7 +1,7 @@
 #pragma once
-#include "../main.h"
+#include "Game.h"
 
 class Reader {
     public:
-        GameData readGameData();
+        Game readGameData();
 };

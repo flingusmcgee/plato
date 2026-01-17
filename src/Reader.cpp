@@ -5,12 +5,12 @@
 #include <fstream>
 
 /* Access external memory and confirm initialization */
-GameData Reader::readGameData() {
+Game Reader::readGameData() {
     std::ifstream file("data/data.json", std::ifstream::binary);
     Json::Value data;
     file >> data;
 
-    GameData external;
+    Game external;
 
     external.SCREENWIDTH = data["screen"]["width"].asInt();
     external.SCREENHEIGHT = data["screen"]["height"].asInt();
