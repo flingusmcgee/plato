@@ -37,13 +37,13 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     /* Load assets into SDL_Texture lists */
     Asset asset;
     if (!game.isEmpty(game.SPRITEPATHS, "Empty SPRITEPATHS")) {
-        playerSpriteList = asset.loadTexturesInto(renderer, game.SPRITEPATHS);
+        game.playerSpriteList = asset.loadTexturesInto(renderer, game.SPRITEPATHS);
     }
     if (!game.isEmpty(game.NPCPATHS, "Empty NPCPATHS")) {
-        npcSpriteList = asset.loadTexturesInto(renderer, game.NPCPATHS);
+        game.npcSpriteList = asset.loadTexturesInto(renderer, game.NPCPATHS);
     }
     if (!game.isEmpty(game.TILEPATHS, "Empty TILEPATHS")) {
-        mapTileList = asset.loadTexturesInto(renderer, game.TILEPATHS);
+        game.mapTileList = asset.loadTexturesInto(renderer, game.TILEPATHS);
     }
 
     TTF_Font *font = asset.loadFont("assets/Barriecito-Regular.ttf", 300); 
@@ -89,11 +89,12 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     /* Render the map tiles */
     static Render render;
-    entityOrder = render.renderMap(game, renderer, tile, mapTileList, npc, npcSpriteList, cam.tilex);
+    int renderedTiles = render.renderMap(renderer, game, game.entityOrder, tile, npc, cam.tilex);
 
     /* Render the entities */
-    entityOrder = render.orderEntity(game, game.SPRITEPATHS[cam.dir/90], playerSpriteList.at(cam.dir/90), player);
-    for (Entity entity : entityOrder) {
+    /* Ensure the player is the final processed entity to guarantee its index is known */
+    int playeridx = render.orderEntity(game, game.entityOrder, game.SPRITEPATHS[cam.dir/90], game.playerSpriteList.at(cam.dir/90), player);
+    for (Entity entity : game.entityOrder) {
         SDL_RenderTexture(renderer, entity.texture, NULL, &entity.rect);
     }
 
@@ -111,10 +112,12 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_RenderDebugTextFormat(renderer, 10, 30, "tilex: %.1f", cam.tilex);
     SDL_RenderDebugTextFormat(renderer, 10, 40, "tiley: %.1f", cam.tiley);
     SDL_RenderDebugTextFormat(renderer, 10, 50, "facing: %d", cam.dir);
-    SDL_RenderDebugTextFormat(renderer, 10, 60, "rendered tiles: %d", render.renderedTiles);
+    SDL_RenderDebugTextFormat(renderer, 10, 60, "rendered tiles / entities: %d / %d", renderedTiles, game.entityOrder.size());
     SDL_RenderDebugTextFormat(renderer, 10, 70, "input: %s", gamepad ? SDL_GetGamepadName(gamepad) : "keyboard");
-    for (int i = 0; i < entityOrder.size(); ++i) {
-        SDL_RenderDebugTextFormat(renderer, 10, game.SCREENHEIGHT - (entityOrder.size() - i) * 10, "%.*s %.1f %.1f", static_cast<int>(entityOrder[i].name.length()), entityOrder[i].name.data(), entityOrder[i].rect.x, entityOrder[i].rect.y);
+    SDL_RenderDebugTextFormat(renderer, 10, 80, "dist: %.2f", game.getDistance(player, game.entityOrder[0].rect));
+    SDL_RenderDebugTextFormat(renderer, 10, 90, "playeridx: %d", playeridx);
+    for (int i = 0; i < game.entityOrder.size(); ++i) {
+        SDL_RenderDebugTextFormat(renderer, 10, game.SCREENHEIGHT - (game.entityOrder.size() - i) * 10, "%.*s %.1f %.1f", static_cast<int>(game.entityOrder[i].name.length()), game.entityOrder[i].name.data(), game.entityOrder[i].rect.x, game.entityOrder[i].rect.y);
     }
 
     /* Show time! */
@@ -125,13 +128,13 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
 /* This function runs once at shutdown. */
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
-    for (SDL_Texture *bits : playerSpriteList) {
+    for (SDL_Texture *bits : game.playerSpriteList) {
         SDL_DestroyTexture(bits);
     }
-    for (SDL_Texture *bits : npcSpriteList) {
+    for (SDL_Texture *bits : game.npcSpriteList) {
         SDL_DestroyTexture(bits);
     }
-    for (SDL_Texture *bits : mapTileList) {
+    for (SDL_Texture *bits : game.mapTileList) {
         SDL_DestroyTexture(bits);
     }
 

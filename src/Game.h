@@ -6,17 +6,11 @@
 #include <string_view>
 #include <vector>
 
-static std::vector<SDL_Texture *> playerSpriteList = { };
-static std::vector<SDL_Texture *> npcSpriteList    = { };
-static std::vector<SDL_Texture *> mapTileList      = { };
-
 struct Entity {
     std::string_view name;
     SDL_Texture *texture;
     SDL_FRect rect;
 };
-
-static std::vector<Entity> entityOrder;
 
 struct Text {
     SDL_Texture *texture;
@@ -26,6 +20,7 @@ struct Text {
 
 class Game {
     public:
+        /* Initial game variables */
         int SCREENWIDTH;
         int SCREENHEIGHT;
         float SPEED;
@@ -41,9 +36,17 @@ class Game {
         std::vector<std::vector<int>> MAP;
         std::vector<std::vector<int>> NPC;
 
+        /* Gameloop variables */
+        std::vector<SDL_Texture *> playerSpriteList;
+        std::vector<SDL_Texture *> npcSpriteList;
+        std::vector<SDL_Texture *> mapTileList;
+
+        std::vector<Entity> entityOrder;
+
         Text text;
 
         void loadGameData(Game external);
+        float getDistance(SDL_FRect self, SDL_FRect target);
         template <typename T>
         bool isEmpty(std::vector<std::vector<T>> container, const char *messageTotal, const char *messageComponent);
         template <typename T>

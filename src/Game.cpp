@@ -17,3 +17,9 @@ void Game::loadGameData(Game external) {
     MAP          = external.MAP;
     NPC          = external.NPC;
 }
+
+float Game::getDistance(SDL_FRect self, SDL_FRect target) {
+    const float xdist = (self.x + self.w / 2) - (target.x + target.w / 2);
+    const float ydist = (self.y + self.h) - (target.y + target.h);
+    return SDL_sqrtf(xdist * xdist + ydist * ydist);
+}

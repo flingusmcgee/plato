@@ -3,7 +3,6 @@
 
 class Render {
     public:
-        int renderedTiles;
-        std::vector<Entity> renderMap(Game& game, SDL_Renderer *renderer, SDL_FRect tile, std::vector<SDL_Texture *>& tileList, SDL_FRect npc, std::vector<SDL_Texture *>& npcList, float origin);
-        std::vector<Entity> orderEntity(Game& game, std::string_view name, SDL_Texture *texture, SDL_FRect rect);
+        int renderMap(SDL_Renderer *renderer, Game& game, std::vector<Entity>& order, SDL_FRect tile, SDL_FRect npc, float origin);
+        int orderEntity(Game& game, std::vector<Entity>& order, std::string_view name, SDL_Texture *texture, SDL_FRect rect);
 };
