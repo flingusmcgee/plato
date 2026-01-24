@@ -26,6 +26,9 @@ Game Reader::readGameData() {
     for (Json::Value string : data["map"]["texture"]) {
         external.TILEPATHS.push_back(string.asString());
     }
+    for (Json::Value string : data["screen"]["icons"]) {
+        external.ICONPATHS.push_back(string.asString());
+    }
 
     external.SPRITEWIDTH = data["entity"]["width"].asFloat();
     external.SPRITEHEIGHT = data["entity"]["height"].asFloat();
@@ -88,6 +91,10 @@ Game Reader::readGameData() {
     }
     std::printf(">> TILEPATHS\n");
     for (std::string string : external.TILEPATHS) {
+        std::printf("%s\n", string.c_str());
+    }
+    std::printf(">> ICONPATHS\n");
+    for (std::string string : external.ICONPATHS) {
         std::printf("%s\n", string.c_str());
     }
 

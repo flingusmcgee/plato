@@ -1,7 +1,10 @@
 {
     "screen": {
         "width": 640,
-        "height": 480
+        "height": 480,
+        "icons": [
+            "assets/pointer.png"
+        ]
     },
     "entity": {
         "width": 128,

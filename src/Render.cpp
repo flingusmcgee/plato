@@ -1,7 +1,7 @@
 #include "Render.h"
 
 /* Render visible tiles and map-bound entities using tileset/spriteset info and origin point. Returns the number of rendered tiles */
-int Render::renderMap(SDL_Renderer *renderer, Game& game, std::vector<Entity>& order, SDL_FRect tile, SDL_FRect npc, float origin) {
+int Render::renderMap(SDL_Renderer *renderer, const Game& game, std::vector<Entity>& order, SDL_FRect tile, SDL_FRect npc, float origin) {
     int renderedTiles = 0;
     order = { };
     for (int i = 0; i < game.MAPHEIGHT; ++i) {
@@ -26,7 +26,7 @@ int Render::renderMap(SDL_Renderer *renderer, Game& game, std::vector<Entity>& o
 }
 
 /* Aligns entities to a pseudo z-index in preparation of rendering. Returns the index of the newly added entity */
-int Render::orderEntity(Game& game, std::vector<Entity>& order, std::string_view name, SDL_Texture *texture, SDL_FRect rect) {
+int Render::orderEntity(const Game& game, std::vector<Entity>& order, std::string_view name, SDL_Texture *texture, SDL_FRect rect) {
     int idx = 0;
     if (order.empty()) {
         order.push_back({name, texture, rect});

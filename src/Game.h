@@ -27,6 +27,7 @@ class Game {
         std::vector<std::string> SPRITEPATHS;
         std::vector<std::string> NPCPATHS;
         std::vector<std::string> TILEPATHS;
+        std::vector<std::string> ICONPATHS;
         float SPRITEWIDTH;
         float SPRITEHEIGHT;
         float TILEWIDTH;
@@ -40,18 +41,25 @@ class Game {
         std::vector<SDL_Texture *> playerSpriteList;
         std::vector<SDL_Texture *> npcSpriteList;
         std::vector<SDL_Texture *> mapTileList;
+        std::vector<SDL_Texture *> iconList;
 
         std::vector<Entity> entityOrder;
 
         Text text;
 
-        void loadGameData(Game external);
+        std::vector<int> above;
+        std::vector<int> below;
+
+        void loadGameData(const Game& external);
         float getDistance(SDL_FRect self, SDL_FRect target);
-        template <typename T>
-        bool isEmpty(std::vector<std::vector<T>> container, const char *messageTotal, const char *messageComponent);
-        template <typename T>
-        bool isEmpty(T container, const char *message);
+        int getClosestTarget(const Game& game, int playeridx, int dir, float width, float height);
 };
+
+float normalize(SDL_FRect rect, bool isY);
+template <typename T>
+bool isEmpty(std::vector<std::vector<T>> container, const char *messageTotal, const char *messageComponent);
+template <typename T>
+bool isEmpty(T container, const char *message);
 
 /**
  * Flexible emptiness check for safe handling - Multi-Dimensional Edition
@@ -60,7 +68,7 @@ class Game {
  * \param messageComponent log message on individual emptiness
  */
 template <typename T>
-bool Game::isEmpty(std::vector<std::vector<T>> container, const char *messageTotal, const char *messageComponent) {
+bool isEmpty(std::vector<std::vector<T>> container, const char *messageTotal, const char *messageComponent) {
     bool value = isEmpty(container, messageTotal);
     if (!value) {
         int i = 0;
@@ -80,7 +88,7 @@ bool Game::isEmpty(std::vector<std::vector<T>> container, const char *messageTot
  * \param message log message on total emptiness
  */
 template <typename T>
-bool Game::isEmpty(T container, const char *message) {
+bool isEmpty(T container, const char *message) {
     if (container.empty()) {
         SDL_Log("%s", message);
         return true;

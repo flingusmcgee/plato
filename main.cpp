@@ -36,14 +36,17 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
 
     /* Load assets into SDL_Texture lists */
     Asset asset;
-    if (!game.isEmpty(game.SPRITEPATHS, "Empty SPRITEPATHS")) {
+    if (!isEmpty(game.SPRITEPATHS, "Empty SPRITEPATHS")) {
         game.playerSpriteList = asset.loadTexturesInto(renderer, game.SPRITEPATHS);
     }
-    if (!game.isEmpty(game.NPCPATHS, "Empty NPCPATHS")) {
+    if (!isEmpty(game.NPCPATHS, "Empty NPCPATHS")) {
         game.npcSpriteList = asset.loadTexturesInto(renderer, game.NPCPATHS);
     }
-    if (!game.isEmpty(game.TILEPATHS, "Empty TILEPATHS")) {
+    if (!isEmpty(game.TILEPATHS, "Empty TILEPATHS")) {
         game.mapTileList = asset.loadTexturesInto(renderer, game.TILEPATHS);
+    }
+    if (!isEmpty(game.ICONPATHS, "Empty ICONPATHS")) {
+        game.iconList = asset.loadTexturesInto(renderer, game.ICONPATHS);
     }
 
     TTF_Font *font = asset.loadFont("assets/Barriecito-Regular.ttf", 300); 
@@ -79,6 +82,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_SetRenderDrawColor(renderer, 249, 245, 236, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
+    const int ticks = SDL_GetTicks();
+
     SDL_FRect player { 0, 0, game.SPRITEWIDTH, game.SPRITEHEIGHT };
     SDL_FRect npc    { 0, 0, game.TILEWIDTH, game.TILEHEIGHT };
     SDL_FRect tile   { 0, 0, game.TILEWIDTH, game.TILEHEIGHT };
@@ -87,15 +92,33 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     static Camera cam;
     cam.updateCamera(game, gamepad, player, tile);
 
-    /* Render the map tiles */
+    /* Render the map tiles and process map-bound entities */
     static Render render;
     int renderedTiles = render.renderMap(renderer, game, game.entityOrder, tile, npc, cam.tilex);
 
-    /* Render the entities */
     /* Ensure the player is the final processed entity to guarantee its index is known */
     int playeridx = render.orderEntity(game, game.entityOrder, game.SPRITEPATHS[cam.dir/90], game.playerSpriteList.at(cam.dir/90), player);
+    
+    /* Create a cross shaped player interaction range */
+    float range = 150; /* The length of each bar */
+    float width = 50;  /* The width of each bar */
+    float horizontal = (cam.dir % 180 / 90) ? range : width;
+    float vertical = (cam.dir % 180 / 90) ? width : range;
+
+    int closest = game.getClosestTarget(game, playeridx, cam.dir, horizontal, vertical);
+    /*
+    SDL_FRect playerrange { normalize(player, 0) - horizontal, normalize(player, 1) - vertical, horizontal * 2, vertical * 2 };
+    SDL_RenderFillRect(renderer, &playerrange);
+    */
+
+    /* Render the entities */
     for (Entity entity : game.entityOrder) {
         SDL_RenderTexture(renderer, entity.texture, NULL, &entity.rect);
+    }
+    if (closest != -1) {
+        SDL_FRect highlighter = game.entityOrder[closest].rect;
+        highlighter.y += SDL_sinf(ticks / 300.0) * 10;
+        SDL_RenderTexture(renderer, game.iconList[0], NULL, &highlighter);
     }
 
     /* Line so it's canon */
@@ -116,6 +139,12 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_RenderDebugTextFormat(renderer, 10, 70, "input: %s", gamepad ? SDL_GetGamepadName(gamepad) : "keyboard");
     SDL_RenderDebugTextFormat(renderer, 10, 80, "dist: %.2f", game.getDistance(player, game.entityOrder[0].rect));
     SDL_RenderDebugTextFormat(renderer, 10, 90, "playeridx: %d", playeridx);
+    for (int i = 0; i < game.above.size(); i++) {
+        SDL_RenderDebugTextFormat(renderer, 10 + 10 * i, 100, "%d", game.above[i]);
+    }
+    for (int i = 0; i < game.below.size(); i++) {
+        SDL_RenderDebugTextFormat(renderer, 10 + 10 * i, 110, "%d", game.below[i]);
+    }
     for (int i = 0; i < game.entityOrder.size(); ++i) {
         SDL_RenderDebugTextFormat(renderer, 10, game.SCREENHEIGHT - (game.entityOrder.size() - i) * 10, "%.*s %.1f %.1f", static_cast<int>(game.entityOrder[i].name.length()), game.entityOrder[i].name.data(), game.entityOrder[i].rect.x, game.entityOrder[i].rect.y);
     }
@@ -135,6 +164,9 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
         SDL_DestroyTexture(bits);
     }
     for (SDL_Texture *bits : game.mapTileList) {
+        SDL_DestroyTexture(bits);
+    }
+    for (SDL_Texture *bits : game.iconList) {
         SDL_DestroyTexture(bits);
     }
 
