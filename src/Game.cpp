@@ -9,6 +9,7 @@ void Game::loadGameData(const Game& external) {
     NPCPATHS     = external.NPCPATHS;
     TILEPATHS    = external.TILEPATHS;
     ICONPATHS    = external.ICONPATHS;
+    AUDIOPATHS   = external.AUDIOPATHS;
     SPRITEWIDTH  = external.SPRITEWIDTH;
     SPRITEHEIGHT = external.SPRITEHEIGHT;
     TILEWIDTH    = external.TILEWIDTH;
@@ -26,40 +27,42 @@ float Game::getDistance(SDL_FRect self, SDL_FRect target) {
 }
 
 /* Finds the closest entities within a rectangle above and below the player */
-int Game::getClosestTarget(const Game& game, int playeridx, int dir, float width, float height) {
+int Game::getClosestTarget(std::vector<Entity>& order, int playeridx, int dir, float width, float height) {
     above = { };
     below = { };
 
-    for (int i = playeridx; i >= 0; --i) {
-        if (normalize(game.entityOrder[i].rect, 1) - normalize(game.entityOrder[playeridx].rect, 1) <= -height) {
+    float xdist;
+    float closestdist;
+    int closest = -1;
+
+    for (int i = playeridx - 1; i >= 0; --i) {
+        if (normalize(order[i].rect, 1) - normalize(order[playeridx].rect, 1) <= -height) {
             break;
         }
-        if (SDL_fabsf(normalize(game.entityOrder[i].rect, 0) - normalize(game.entityOrder[playeridx].rect, 0)) <= width && i != playeridx) {
+        xdist = normalize(order[i].rect, 0) - normalize(order[playeridx].rect, 0);
+        if (SDL_fabsf(xdist) <= width && !(xdist * (dir - 180) > 0 && dir % 180 != 0)) {
             above.push_back(i);
+            if (dir != 180 && (getDistance(order[i].rect, order[playeridx].rect) < closestdist || closest == -1)) {
+                closest = i;
+                closestdist = getDistance(order[i].rect, order[playeridx].rect);
+            }
         }
     }
-    for (int i = playeridx; i <= game.entityOrder.size() - 1; ++i) {
-        if (normalize(game.entityOrder[i].rect, 1) - normalize(game.entityOrder[playeridx].rect, 1) >= height) {
+    for (int i = playeridx + 1; i <= order.size() - 1; ++i) {
+        if (normalize(order[i].rect, 1) - normalize(order[playeridx].rect, 1) >= height) {
             break;
         }
-        if (SDL_fabsf(normalize(game.entityOrder[i].rect, 0) - normalize(game.entityOrder[playeridx].rect, 0)) <= width && i != playeridx) {
+        xdist = normalize(order[i].rect, 0) - normalize(order[playeridx].rect, 0);
+        if (SDL_fabsf(xdist) <= width && !(xdist * (dir - 180) > 0 && dir % 180 != 0)) {
             below.push_back(i);
+            if (dir != 0 && (getDistance(order[i].rect, order[playeridx].rect) < closestdist || closest == -1)) {
+                closest = i;
+                closestdist = getDistance(order[i].rect, order[playeridx].rect);
+            }
         }
     }
 
-    std::vector<int> closest;
-    if (dir != 180) {
-        for (int i : above) {
-            closest.push_back(i);
-        }
-    }
-    if (dir != 0) {
-        for (int i : below) {
-            closest.push_back(i);
-        }
-    }
-
-    return (closest.empty()) ? -1 : closest[0];
+    return closest;
 }
 
 /* SDL_Render uses the top-left corner of an entity, but game logic considers entities at their middle-bottom */

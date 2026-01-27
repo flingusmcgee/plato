@@ -28,6 +28,7 @@ class Game {
         std::vector<std::string> NPCPATHS;
         std::vector<std::string> TILEPATHS;
         std::vector<std::string> ICONPATHS;
+        std::vector<std::string> AUDIOPATHS;
         float SPRITEWIDTH;
         float SPRITEHEIGHT;
         float TILEWIDTH;
@@ -52,7 +53,7 @@ class Game {
 
         void loadGameData(const Game& external);
         float getDistance(SDL_FRect self, SDL_FRect target);
-        int getClosestTarget(const Game& game, int playeridx, int dir, float width, float height);
+        int getClosestTarget(std::vector<Entity>& order, int playeridx, int dir, float width, float height);
 };
 
 float normalize(SDL_FRect rect, bool isY);

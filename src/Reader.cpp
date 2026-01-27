@@ -12,8 +12,8 @@ Game Reader::readGameData() {
 
     Game external;
 
-    external.SCREENWIDTH = data["screen"]["width"].asInt();
-    external.SCREENHEIGHT = data["screen"]["height"].asInt();
+    external.SCREENWIDTH = data["game"]["screenwidth"].asInt();
+    external.SCREENHEIGHT = data["game"]["screenheight"].asInt();
 
     external.SPEED = data["entity"]["player"]["speed"].asFloat();
 
@@ -26,8 +26,11 @@ Game Reader::readGameData() {
     for (Json::Value string : data["map"]["texture"]) {
         external.TILEPATHS.push_back(string.asString());
     }
-    for (Json::Value string : data["screen"]["icons"]) {
+    for (Json::Value string : data["game"]["icons"]) {
         external.ICONPATHS.push_back(string.asString());
+    }
+    for (Json::Value string : data["game"]["bgmusic"]) {
+        external.AUDIOPATHS.push_back(string.asString());
     }
 
     external.SPRITEWIDTH = data["entity"]["width"].asFloat();

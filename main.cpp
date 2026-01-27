@@ -5,10 +5,12 @@
 #include "src/Asset.h"
 #include "src/Camera.h"
 #include "src/Render.h"
+#include "src/Audio.h"
 
-static SDL_Window   *window   = NULL;
-static SDL_Renderer *renderer = NULL;
+static SDL_Window   *window    = NULL;
+static SDL_Renderer *renderer  = NULL;
 static Game game;
+static Audio audio;
 
 /* This function runs once at startup. */
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
@@ -18,7 +20,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     Reader reader;
     game.loadGameData(reader.readGameData());
 
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD)) {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
         SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
@@ -49,10 +51,13 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
         game.iconList = asset.loadTexturesInto(renderer, game.ICONPATHS);
     }
 
-    TTF_Font *font = asset.loadFont("assets/Barriecito-Regular.ttf", 300); 
+    TTF_Font *font = asset.loadFont("assets/Barriecito-Regular.ttf", 300);
     game.text = asset.loadFontTexture(renderer, font, "Waiting for something?", { 0, 0, 0, 255 });
 
     TTF_CloseFont(font);
+
+    audio.audioList.push_back(audio.loadAudio(game.AUDIOPATHS[0]));
+    audio.createStream();
     return SDL_APP_CONTINUE;
 }
 
@@ -99,13 +104,13 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     /* Ensure the player is the final processed entity to guarantee its index is known */
     int playeridx = render.orderEntity(game, game.entityOrder, game.SPRITEPATHS[cam.dir/90], game.playerSpriteList.at(cam.dir/90), player);
     
-    /* Create a cross shaped player interaction range */
-    float range = 150; /* The length of each bar */
-    float width = 50;  /* The width of each bar */
+    /* Create the player interaction range */
+    float range = 150;
+    float width = 75;
     float horizontal = (cam.dir % 180 / 90) ? range : width;
     float vertical = (cam.dir % 180 / 90) ? width : range;
 
-    int closest = game.getClosestTarget(game, playeridx, cam.dir, horizontal, vertical);
+    int closest = game.getClosestTarget(game.entityOrder, playeridx, cam.dir, horizontal, vertical);
     /*
     SDL_FRect playerrange { normalize(player, 0) - horizontal, normalize(player, 1) - vertical, horizontal * 2, vertical * 2 };
     SDL_RenderFillRect(renderer, &playerrange);
@@ -129,6 +134,11 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_FRect textbox = { 100, game.SCREENHEIGHT - 100.0f, game.text.w * 0.1f, game.text.h * 0.1f };
     SDL_RenderTexture(renderer, game.text.texture, NULL, &textbox);
 
+    /* Play audio */
+    if (SDL_GetAudioStreamQueued(audio.stream) == 0) {
+        audio.addAudio(audio.audioList[0]);
+    }
+
     /* Debug text */
     SDL_RenderDebugTextFormat(renderer, 10, 10, "x: %.1f", cam.x);
     SDL_RenderDebugTextFormat(renderer, 10, 20, "y: %.1f", cam.y);
@@ -145,6 +155,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     for (int i = 0; i < game.below.size(); i++) {
         SDL_RenderDebugTextFormat(renderer, 10 + 10 * i, 110, "%d", game.below[i]);
     }
+    SDL_RenderDebugTextFormat(renderer, 10, 120, "queued: %d", SDL_GetAudioStreamQueued(audio.stream));
+    SDL_RenderDebugTextFormat(renderer, 10, 130, "available: %d", SDL_GetAudioStreamAvailable(audio.stream));
     for (int i = 0; i < game.entityOrder.size(); ++i) {
         SDL_RenderDebugTextFormat(renderer, 10, game.SCREENHEIGHT - (game.entityOrder.size() - i) * 10, "%.*s %.1f %.1f", static_cast<int>(game.entityOrder[i].name.length()), game.entityOrder[i].name.data(), game.entityOrder[i].rect.x, game.entityOrder[i].rect.y);
     }
@@ -174,5 +186,7 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     TTF_Quit();
 
     SDL_CloseGamepad(gamepad);
+
+    SDL_DestroyAudioStream(audio.stream);
     /* SDL will clean up the window/renderer for us. */
 }

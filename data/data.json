@@ -1,9 +1,12 @@
 {
-    "screen": {
-        "width": 640,
-        "height": 480,
+    "game": {
+        "screenwidth": 640,
+        "screenheight": 480,
         "icons": [
             "assets/pointer.png"
+        ],
+        "bgmusic": [
+            "assets/sound_machine.wav"
         ]
     },
     "entity": {
