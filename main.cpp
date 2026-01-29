@@ -6,11 +6,13 @@
 #include "src/Camera.h"
 #include "src/Render.h"
 #include "src/Audio.h"
+#include "src/Input.h"
 
 static SDL_Window   *window    = NULL;
 static SDL_Renderer *renderer  = NULL;
 static Game game;
 static Audio audio;
+static Input input;
 
 /* This function runs once at startup. */
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
@@ -52,12 +54,15 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     }
 
     TTF_Font *font = asset.loadFont("assets/Barriecito-Regular.ttf", 300);
-    game.text = asset.loadFontTexture(renderer, font, "Waiting for something?", { 0, 0, 0, 255 });
-
+    std::string textdata = "Waiting for something?";
+    game.text = asset.loadFontTexture(renderer, font, textdata, { 0, 0, 0, 255 });
     TTF_CloseFont(font);
 
     audio.audioList.push_back(audio.loadAudio(game.AUDIOPATHS[0]));
     audio.createStream();
+
+    input.initKeyboard();
+
     return SDL_APP_CONTINUE;
 }
 
@@ -68,15 +73,16 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     }
     if (event->type == SDL_EVENT_GAMEPAD_ADDED) {
         SDL_Log("Gamepad inserted: %u", event->gdevice.which);
-        gamepad = SDL_OpenGamepad(event->gdevice.which);
-        if (!gamepad) {
+        input.gamepad = SDL_OpenGamepad(event->gdevice.which);
+        input.initGamepad();
+        if (!input.gamepad) {
             SDL_Log("Gamepad not detected");
         }
     }
     if (event->type == SDL_EVENT_GAMEPAD_REMOVED) {
         SDL_Log("Gamepad disconnected");
-        SDL_CloseGamepad(gamepad);
-        gamepad = NULL;
+        SDL_CloseGamepad(input.gamepad);
+        input.gamepad = NULL;
     }
 
     return SDL_APP_CONTINUE;
@@ -94,8 +100,10 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_FRect tile   { 0, 0, game.TILEWIDTH, game.TILEHEIGHT };
 
     /* Camera and controls */
+    input.updateJoysticks();
+
     static Camera cam;
-    cam.updateCamera(game, gamepad, player, tile);
+    cam.updateCamera(game, input, player, tile);
 
     /* Render the map tiles and process map-bound entities */
     static Render render;
@@ -120,24 +128,39 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     for (Entity entity : game.entityOrder) {
         SDL_RenderTexture(renderer, entity.texture, NULL, &entity.rect);
     }
+
+    /* In-game narration */
+    float textmulti;
+
+    if (input.isKeyDown(SDL_SCANCODE_Z, false) || input.isButtonDown(SDL_GAMEPAD_BUTTON_SOUTH, false)) {
+        game.text.reftick = ticks;
+        game.interacting = !game.interacting;
+    }
     if (closest != -1) {
         SDL_FRect highlighter = game.entityOrder[closest].rect;
         highlighter.y += SDL_sinf(ticks / 300.0) * 10;
         SDL_RenderTexture(renderer, game.iconList[0], NULL, &highlighter);
     }
-
-    /* Line so it's canon */
-    SDL_SetRenderDrawColor(renderer, 0, 0, 255, SDL_ALPHA_OPAQUE);
-    SDL_RenderLine(renderer, 0, 0, game.SCREENWIDTH, game.SCREENHEIGHT);
-
-    /* In-game narration */
-    SDL_FRect textbox = { 100, game.SCREENHEIGHT - 100.0f, game.text.w * 0.1f, game.text.h * 0.1f };
-    SDL_RenderTexture(renderer, game.text.texture, NULL, &textbox);
+    else {
+        game.interacting = false;
+    }
+    textmulti = SDL_min((ticks - game.text.reftick) / 500.0f, 1);
+    SDL_FRect textbox  = { 10.0f, game.SCREENHEIGHT - 100.0f, game.SCREENWIDTH - 20.0f, 90.0f };
+    SDL_FRect textsrcrect = { 0, 0, game.text.w * textmulti, game.text.h };
+    SDL_FRect textrect = { 20.0f, game.SCREENHEIGHT - 100.0f, game.text.w * 0.1f * textmulti, game.text.h * 0.1f };
+    if (game.interacting) {
+        SDL_RenderFillRect(renderer, &textbox);
+        SDL_RenderTexture(renderer, game.text.texture, &textsrcrect, &textrect);
+    }
 
     /* Play audio */
     if (SDL_GetAudioStreamQueued(audio.stream) == 0) {
         audio.addAudio(audio.audioList[0]);
     }
+
+    /* Line so it's canon */
+    SDL_SetRenderDrawColor(renderer, 0, 0, 255, SDL_ALPHA_OPAQUE);
+    SDL_RenderLine(renderer, 0, 0, game.SCREENWIDTH, game.SCREENHEIGHT);
 
     /* Debug text */
     SDL_RenderDebugTextFormat(renderer, 10, 10, "x: %.1f", cam.x);
@@ -146,17 +169,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_RenderDebugTextFormat(renderer, 10, 40, "tiley: %.1f", cam.tiley);
     SDL_RenderDebugTextFormat(renderer, 10, 50, "facing: %d", cam.dir);
     SDL_RenderDebugTextFormat(renderer, 10, 60, "rendered tiles / entities: %d / %d", renderedTiles, game.entityOrder.size());
-    SDL_RenderDebugTextFormat(renderer, 10, 70, "input: %s", gamepad ? SDL_GetGamepadName(gamepad) : "keyboard");
-    SDL_RenderDebugTextFormat(renderer, 10, 80, "dist: %.2f", game.getDistance(player, game.entityOrder[0].rect));
-    SDL_RenderDebugTextFormat(renderer, 10, 90, "playeridx: %d", playeridx);
-    for (int i = 0; i < game.above.size(); i++) {
-        SDL_RenderDebugTextFormat(renderer, 10 + 10 * i, 100, "%d", game.above[i]);
-    }
-    for (int i = 0; i < game.below.size(); i++) {
-        SDL_RenderDebugTextFormat(renderer, 10 + 10 * i, 110, "%d", game.below[i]);
-    }
-    SDL_RenderDebugTextFormat(renderer, 10, 120, "queued: %d", SDL_GetAudioStreamQueued(audio.stream));
-    SDL_RenderDebugTextFormat(renderer, 10, 130, "available: %d", SDL_GetAudioStreamAvailable(audio.stream));
+    SDL_RenderDebugTextFormat(renderer, 10, 70, "input: %s", input.gamepad ? SDL_GetGamepadName(input.gamepad) : "keyboard");
     for (int i = 0; i < game.entityOrder.size(); ++i) {
         SDL_RenderDebugTextFormat(renderer, 10, game.SCREENHEIGHT - (game.entityOrder.size() - i) * 10, "%.*s %.1f %.1f", static_cast<int>(game.entityOrder[i].name.length()), game.entityOrder[i].name.data(), game.entityOrder[i].rect.x, game.entityOrder[i].rect.y);
     }
@@ -181,11 +194,14 @@ void SDL_AppQuit(void *appstate, SDL_AppResult result) {
     for (SDL_Texture *bits : game.iconList) {
         SDL_DestroyTexture(bits);
     }
+    for (auto *bits : audio.audioList) {
+        SDL_free(bits);
+    }
 
     SDL_DestroyTexture(game.text.texture);
     TTF_Quit();
 
-    SDL_CloseGamepad(gamepad);
+    SDL_CloseGamepad(input.gamepad);
 
     SDL_DestroyAudioStream(audio.stream);
     /* SDL will clean up the window/renderer for us. */

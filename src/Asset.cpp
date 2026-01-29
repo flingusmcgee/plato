@@ -42,7 +42,7 @@ TTF_Font* Asset::loadFont(std::string fontPath, float fontSize) {
     return TTF_OpenFont(fontPath.c_str(), fontSize);
 }
 
-Text Asset::loadFontTexture(SDL_Renderer *renderer, TTF_Font* font, std::string text, SDL_Color color) {
+Text Asset::loadFontTexture(SDL_Renderer *renderer, TTF_Font* font, std::string& text, SDL_Color color) {
     SDL_Surface *surface = NULL;
     SDL_Texture *texture = NULL;
 
@@ -62,5 +62,5 @@ Text Asset::loadFontTexture(SDL_Renderer *renderer, TTF_Font* font, std::string 
     float h = (float) surface->h;
     SDL_DestroySurface(surface);
 
-    return { texture, w, h };
+    return { texture, text, w, h };
 }

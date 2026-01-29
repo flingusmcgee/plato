@@ -14,8 +14,10 @@ struct Entity {
 
 struct Text {
     SDL_Texture *texture;
+    std::string_view data;
     float w;
     float h;
+    int reftick;
 };
 
 class Game {
@@ -46,6 +48,7 @@ class Game {
 
         std::vector<Entity> entityOrder;
 
+        bool interacting;
         Text text;
 
         std::vector<int> above;
