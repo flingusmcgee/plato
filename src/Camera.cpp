@@ -3,16 +3,16 @@
 /* Manage scrolling background/moving player based on keypresses and map borders */
 void Camera::updateCamera(Game& game, Input& input, SDL_FRect& player, SDL_FRect& tile) {
     /* Controls */
-    bool up = input.isKeyDown(SDL_SCANCODE_W, true) || input.isKeyDown(SDL_SCANCODE_UP, true);
+    bool up    = input.isKeyDown(SDL_SCANCODE_W, true) || input.isKeyDown(SDL_SCANCODE_UP, true);
     bool right = input.isKeyDown(SDL_SCANCODE_D, true) || input.isKeyDown(SDL_SCANCODE_RIGHT, true);
-    bool down = input.isKeyDown(SDL_SCANCODE_S, true) || input.isKeyDown(SDL_SCANCODE_DOWN, true);
-    bool left = input.isKeyDown(SDL_SCANCODE_A, true) || input.isKeyDown(SDL_SCANCODE_LEFT, true);
+    bool down  = input.isKeyDown(SDL_SCANCODE_S, true) || input.isKeyDown(SDL_SCANCODE_DOWN, true);
+    bool left  = input.isKeyDown(SDL_SCANCODE_A, true) || input.isKeyDown(SDL_SCANCODE_LEFT, true);
 
     if (up || (input.ly < -10000 && SDL_abs(input.ly) > SDL_abs(input.lx))) {
         y -= game.SPEED;
         dir = 0;
     }
-    else if (right || (input.lx > 10000 && SDL_abs(input.lx) > abs(input.ly))) {
+    else if (right || (input.lx > 10000 && SDL_abs(input.lx) > SDL_abs(input.ly))) {
         x += game.SPEED;
         dir = 90;
     }
@@ -20,7 +20,7 @@ void Camera::updateCamera(Game& game, Input& input, SDL_FRect& player, SDL_FRect
         y += game.SPEED;
         dir = 180;
     }
-    else if (left || (input.lx < -10000 && SDL_abs(input.lx) > abs(input.ly))) {
+    else if (left || (input.lx < -10000 && SDL_abs(input.lx) > SDL_abs(input.ly))) {
         x -= game.SPEED;
         dir = 270;
     }

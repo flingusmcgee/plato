@@ -7,7 +7,12 @@
         ],
         "bgmusic": [
             "assets/sound_machine.wav"
-        ]
+        ],
+        "font": {
+            "path": "assets/Barriecito-Regular.ttf",
+            "size": 30,
+            "speed": 30
+        }
     },
     "entity": {
         "width": 128,
@@ -21,7 +26,9 @@
                 "assets/timmy_s.png",
                 "assets/timmy_w.png"
             ],
-            "speed": 1.0
+            "speed": 1.0,
+            "range": 150,
+            "breadth": 75
         },
         "npc": {
             "width": 128,

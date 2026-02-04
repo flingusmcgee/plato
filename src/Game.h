@@ -5,42 +5,59 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <map>
 
 struct Entity {
-    std::string_view name;
+    int type;
     SDL_Texture *texture;
     SDL_FRect rect;
 };
 
 struct Text {
     SDL_Texture *texture;
-    std::string_view data;
+    std::string data;
     float w;
     float h;
+    float progress;
     int reftick;
+    int line;
 };
 
 class Game {
     public:
         /* Initial game variables */
-        int SCREENWIDTH;
-        int SCREENHEIGHT;
-        float SPEED;
+        /* Paths */
         std::vector<std::string> SPRITEPATHS;
         std::vector<std::string> NPCPATHS;
         std::vector<std::string> TILEPATHS;
         std::vector<std::string> ICONPATHS;
         std::vector<std::string> AUDIOPATHS;
+        /* Screen */
+        int SCREENWIDTH;
+        int SCREENHEIGHT;
+        std::string FONTPATH;
+        int FONTSIZE;
+        int FONTSPEED;
+        /* Player */
+        float SPEED;
         float SPRITEWIDTH;
         float SPRITEHEIGHT;
+        int RANGE;
+        int BREADTH;
+        /* Map */
         float TILEWIDTH;
         float TILEHEIGHT;
         int MAPWIDTH;
         int MAPHEIGHT;
+        std::vector<std::string> MAPSET;
         std::vector<std::vector<int>> MAP;
+        std::vector<std::string> NPCSET;
         std::vector<std::vector<int>> NPC;
+        std::vector<std::vector<std::string>> DIALOGUE;
 
         /* Gameloop variables */
+        int ticks;
+
         std::vector<SDL_Texture *> playerSpriteList;
         std::vector<SDL_Texture *> npcSpriteList;
         std::vector<SDL_Texture *> mapTileList;
@@ -49,7 +66,6 @@ class Game {
         std::vector<Entity> entityOrder;
 
         bool interacting;
-        Text text;
 
         std::vector<int> above;
         std::vector<int> below;

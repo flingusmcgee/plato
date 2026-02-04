@@ -8,7 +8,8 @@ void Input::initKeyboard() {
     }
 }
 
-void Input::initGamepad() {
+void Input::initGamepad(SDL_Gamepad *gamepadIn) {
+    gamepad = gamepadIn;
     if (buttonJustDown.empty() && gamepad) {
         int numbuttons;
         SDL_GetGamepadBindings(gamepad, &numbuttons);
@@ -17,10 +18,18 @@ void Input::initGamepad() {
 }
 
 void Input::updateJoysticks() {
-    lx = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX);
-    ly = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY);
-    rx = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTX);
-    ry = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTY);
+    if (gamepad) {
+        lx = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTX);
+        ly = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_LEFTY);
+        rx = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTX);
+        ry = SDL_GetGamepadAxis(gamepad, SDL_GAMEPAD_AXIS_RIGHTY);
+    }
+    else {
+        lx = 0;
+        ly = 0;
+        rx = 0;
+        ry = 0;
+    }
 }
 
 /* Get keyboard key press with options for holding or single stroke */
@@ -40,13 +49,15 @@ bool Input::isKeyDown(SDL_Scancode key, bool hold) {
 /* Get gamepad button press with options for holding or single stroke */
 bool Input::isButtonDown(SDL_GamepadButton buttonIn, bool hold) {
     bool output;
-    bool button = SDL_GetGamepadButton(gamepad, buttonIn);
-    output = (hold) ? button : buttonJustDown[buttonIn] && button;
-    if (button && buttonJustDown[buttonIn]) {
-        buttonJustDown[buttonIn] = false;
-    }
-    if (!button && !buttonJustDown[buttonIn]) {
-        buttonJustDown[buttonIn] = true;
+    if (gamepad) {
+        bool button = SDL_GetGamepadButton(gamepad, buttonIn);
+        output = (hold) ? button : buttonJustDown[buttonIn] && button;
+        if (button && buttonJustDown[buttonIn]) {
+            buttonJustDown[buttonIn] = false;
+        }
+        if (!button && !buttonJustDown[buttonIn]) {
+            buttonJustDown[buttonIn] = true;
+        }
     }
     return output;
 }

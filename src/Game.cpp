@@ -2,22 +2,34 @@
 
 /* Initialize game data using reader.cpp */
 void Game::loadGameData(const Game& external) {
-    SCREENWIDTH  = external.SCREENWIDTH;
-    SCREENHEIGHT = external.SCREENHEIGHT;
-    SPEED        = external.SPEED;
+    /* Paths */
     SPRITEPATHS  = external.SPRITEPATHS;
     NPCPATHS     = external.NPCPATHS;
     TILEPATHS    = external.TILEPATHS;
     ICONPATHS    = external.ICONPATHS;
     AUDIOPATHS   = external.AUDIOPATHS;
+    /* Screen */
+    SCREENWIDTH  = external.SCREENWIDTH;
+    SCREENHEIGHT = external.SCREENHEIGHT;
+    FONTPATH     = external.FONTPATH;
+    FONTSIZE     = external.FONTSIZE;
+    FONTSPEED    = external.FONTSPEED;
+    /* Player */
+    SPEED        = external.SPEED;
     SPRITEWIDTH  = external.SPRITEWIDTH;
     SPRITEHEIGHT = external.SPRITEHEIGHT;
+    RANGE        = external.RANGE;
+    BREADTH      = external.BREADTH;
+    /* Map */
     TILEWIDTH    = external.TILEWIDTH;
     TILEHEIGHT   = external.TILEHEIGHT;
     MAPWIDTH     = external.MAPWIDTH;
     MAPHEIGHT    = external.MAPHEIGHT;
+    MAPSET       = external.MAPSET;
     MAP          = external.MAP;
+    NPCSET       = external.NPCSET;
     NPC          = external.NPC;
+    DIALOGUE     = external.DIALOGUE;
 }
 
 float Game::getDistance(SDL_FRect self, SDL_FRect target) {
@@ -40,7 +52,7 @@ int Game::getClosestTarget(std::vector<Entity>& order, int playeridx, int dir, f
             break;
         }
         xdist = normalize(order[i].rect, 0) - normalize(order[playeridx].rect, 0);
-        if (SDL_fabsf(xdist) <= width && !(xdist * (dir - 180) > 0 && dir % 180 != 0)) {
+        if (SDL_fabsf(xdist) <= width && (xdist * (dir - 180) < 0 || dir % 180 == 0)) {
             above.push_back(i);
             if (dir != 180 && (getDistance(order[i].rect, order[playeridx].rect) < closestdist || closest == -1)) {
                 closest = i;
@@ -53,7 +65,7 @@ int Game::getClosestTarget(std::vector<Entity>& order, int playeridx, int dir, f
             break;
         }
         xdist = normalize(order[i].rect, 0) - normalize(order[playeridx].rect, 0);
-        if (SDL_fabsf(xdist) <= width && !(xdist * (dir - 180) > 0 && dir % 180 != 0)) {
+        if (SDL_fabsf(xdist) <= width && (xdist * (dir - 180) < 0 || dir % 180 == 0)) {
             below.push_back(i);
             if (dir != 0 && (getDistance(order[i].rect, order[playeridx].rect) < closestdist || closest == -1)) {
                 closest = i;
