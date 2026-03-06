@@ -1,7 +1,7 @@
 #include "Render.h"
 
 /* Render visible tiles and map-bound entities using tileset/spriteset info and origin point. Returns the number of rendered tiles */
-int Render::renderMap(SDL_Renderer *renderer, const Game& game, std::vector<Entity>& order, SDL_FRect tile, SDL_FRect npc, float origin) {
+int Render::renderMap(SDL_Renderer *renderer, Game& game, std::vector<Entity>& order, SDL_FRect tile, SDL_FRect npc, float origin) {
     int renderedTiles = 0;
     order = { };
     for (int i = 0; i < game.MAPHEIGHT; ++i) {
@@ -13,7 +13,7 @@ int Render::renderMap(SDL_Renderer *renderer, const Game& game, std::vector<Enti
                 npc.x = tile.x;
                 npc.y = tile.y;
                 if (game.NPC[i][j] > 0) {
-                    orderEntity(game, order, game.NPC[i][j], game.npcSpriteList.at(game.NPC[i][j]), npc);
+                    orderEntity(order, game.NPC[i][j], game.npcSpriteList.at(game.NPC[i][j]), npc);
                 }
             }
             tile.x += game.TILEWIDTH;
@@ -26,20 +26,20 @@ int Render::renderMap(SDL_Renderer *renderer, const Game& game, std::vector<Enti
 }
 
 /* Aligns entities to a pseudo z-index in preparation of rendering. Returns the index of the newly added entity */
-int Render::orderEntity(const Game& game, std::vector<Entity>& order, int type, SDL_Texture *texture, SDL_FRect rect) {
+int Render::orderEntity(std::vector<Entity>& order, int type, SDL_Texture *texture, SDL_FRect rect) {
     int idx = 0;
     if (order.empty()) {
         order.push_back({type, texture, rect});
     }
     else {
         for (auto it = order.begin(); it != order.end(); ++it) {
-            if (rect.y - (game.TILEHEIGHT - rect.h) <= (*it).rect.y) {
+            if (normalize(rect, 1) <= normalize((*it).rect, 1)) {
                 order.insert(it, {type, texture, rect});
                 break;
             }
             ++idx;
         }
-        if (rect.y - (game.TILEHEIGHT - rect.h) > order.back().rect.y) {
+        if (normalize(rect, 1) > normalize(order.back().rect, 1)) {
             order.push_back({type, texture, rect});
         }
     }

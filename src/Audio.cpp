@@ -9,6 +9,7 @@ Uint8* Audio::loadAudio(std::string path) {
 }
 
 void Audio::createStream() {
+    spec = { SDL_AUDIO_S16LE, 2, 44100 };
     stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL);
     SDL_ResumeAudioStreamDevice(stream);
 }

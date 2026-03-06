@@ -9,5 +9,8 @@ class Camera {
         float tilex, tiley;
         float playerx, playery;
 
-        void updateCamera(Game& game, Input& input, SDL_FRect& player, SDL_FRect& tile);
+        Coordinate updateCamera(Game& game, Input& input, SDL_FRect& player);
 };
+
+float normalize(SDL_FRect rect, bool isY);
+SDL_FRect offset(SDL_FRect rect, Coordinate origin);

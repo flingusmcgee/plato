@@ -7,7 +7,8 @@ class Audio {
         SDL_AudioSpec spec;
         Uint32 len;
 
-        std::vector<Uint8*> audioList;
+        Uint8 *bg;
+        int bgtype;
 
         Uint8* loadAudio(std::string path);
         void createStream();

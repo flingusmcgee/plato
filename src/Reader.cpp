@@ -35,13 +35,15 @@ Game Reader::readGameData() {
     external.FONTSPEED = data["game"]["font"]["speed"].asInt();
     /* Player */
     external.SPEED = data["entity"]["player"]["speed"].asFloat();
-    external.SPRITEWIDTH = data["entity"]["width"].asFloat();
-    external.SPRITEHEIGHT = data["entity"]["height"].asFloat();
+    external.SPRITEWIDTH = data["entity"]["width"].asInt();
+    external.SPRITEHEIGHT = data["entity"]["height"].asInt();
     external.RANGE = data["entity"]["player"]["range"].asInt();
     external.BREADTH = data["entity"]["player"]["breadth"].asInt();
+    /* Entity */
+    external.ENEMYSPEED = data["entity"]["speed"].asFloat();
     /* Map */
-    external.TILEWIDTH = data["map"]["tilewidth"].asFloat();
-    external.TILEHEIGHT = data["map"]["tileheight"].asFloat();
+    external.TILEWIDTH = data["map"]["tilewidth"].asInt();
+    external.TILEHEIGHT = data["map"]["tileheight"].asInt();
     external.MAPWIDTH = data["map"]["mapwidth"].asInt();
     external.MAPHEIGHT = data["map"]["mapheight"].asInt();
 
@@ -99,23 +101,23 @@ Game Reader::readGameData() {
 
     std::printf(">> SPRITEPATHS\n");
     for (std::string string : external.SPRITEPATHS) {
-        std::printf("%s\n", string.c_str());
+        std::printf("%s\n", (!string.empty()) ? string.c_str() : "[NULL]");
     }
     std::printf(">> NPCPATHS\n");
     for (std::string string : external.NPCPATHS) {
-        std::printf("%s\n", string.c_str());
+        std::printf("%s\n", (!string.empty()) ? string.c_str() : "[NULL]");
     }
     std::printf(">> TILEPATHS\n");
     for (std::string string : external.TILEPATHS) {
-        std::printf("%s\n", string.c_str());
+        std::printf("%s\n", (!string.empty()) ? string.c_str() : "[NULL]");
     }
     std::printf(">> ICONPATHS\n");
     for (std::string string : external.ICONPATHS) {
-        std::printf("%s\n", string.c_str());
+        std::printf("%s\n", (!string.empty()) ? string.c_str() : "[NULL]");
     }
     std::printf(">> AUDIOPATHS\n");
     for (std::string string : external.AUDIOPATHS) {
-        std::printf("%s\n", string.c_str());
+        std::printf("%s\n", (!string.empty()) ? string.c_str() : "[NULL]");
     }
 
     std::printf("\n>> SCREEN\n");
@@ -127,14 +129,17 @@ Game Reader::readGameData() {
 
     std::printf("\n>> PLAYER\n");
     std::printf("SPEED: %.1f\n", external.SPEED);
-    std::printf("SPRITEWIDTH: %.1f\n", external.SPRITEWIDTH);
-    std::printf("SPRITEHEIGHT: %.1f\n", external.SPRITEHEIGHT);
+    std::printf("SPRITEWIDTH: %d\n", external.SPRITEWIDTH);
+    std::printf("SPRITEHEIGHT: %d\n", external.SPRITEHEIGHT);
     std::printf("RANGE: %d\n", external.RANGE);
     std::printf("BREADTH: %d\n", external.BREADTH);
 
+    std::printf("\n>> ENTITIES\n");
+    std::printf("ENTITY SPEED: %f\n", external.ENEMYSPEED);
+
     std::printf("\n>> MAP\n");
-    std::printf("TILEWIDTH: %.1f\n", external.TILEWIDTH);
-    std::printf("TILEHEIGHT: %.1f\n", external.TILEHEIGHT);
+    std::printf("TILEWIDTH: %d\n", external.TILEWIDTH);
+    std::printf("TILEHEIGHT: %d\n", external.TILEHEIGHT);
     std::printf("MAPWIDTH: %d\n", external.MAPWIDTH);
     std::printf("MAPHEIGHT: %d\n", external.MAPHEIGHT);
 
@@ -159,17 +164,17 @@ Game Reader::readGameData() {
         std::printf("\n");
     }
 
-    std::printf(">> DIALOGUE\n");
+    std::printf("\n>> DIALOGUE\n");
     int dialogueidx = 0;
     for (auto entity : external.DIALOGUE) {
         std::printf("%s: ", external.NPCSET[dialogueidx].c_str());
         for (auto line : entity) {
-            std::printf("%s ", line.c_str());
+            std::printf("\"%s\" ", line.c_str());
         }
         std::printf("\n");
         dialogueidx++;
     }
-    std::printf(">> GAME DATA LOADED - BEGIN PROCESSING\n");
+    std::printf("\n>> GAME DATA LOADED - BEGIN PROCESSING\n");
 
     return external;
 }

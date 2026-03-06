@@ -7,20 +7,17 @@
 #include <vector>
 #include <map>
 
-struct Entity {
-    int type;
-    SDL_Texture *texture;
-    SDL_FRect rect;
+struct Coordinate {
+    float x;
+    float y;
 };
 
 struct Text {
-    SDL_Texture *texture;
-    std::string data;
-    float w;
+    std::vector<SDL_Texture *> texture;
+    std::vector<std::string> data;
+    std::vector<float> w;
     float h;
-    float progress;
     int reftick;
-    int line;
 };
 
 class Game {
@@ -40,13 +37,15 @@ class Game {
         int FONTSPEED;
         /* Player */
         float SPEED;
-        float SPRITEWIDTH;
-        float SPRITEHEIGHT;
+        int SPRITEWIDTH;
+        int SPRITEHEIGHT;
         int RANGE;
         int BREADTH;
+        /* Entities */
+        float ENEMYSPEED;
         /* Map */
-        float TILEWIDTH;
-        float TILEHEIGHT;
+        int TILEWIDTH;
+        int TILEHEIGHT;
         int MAPWIDTH;
         int MAPHEIGHT;
         std::vector<std::string> MAPSET;
@@ -56,26 +55,17 @@ class Game {
         std::vector<std::vector<std::string>> DIALOGUE;
 
         /* Gameloop variables */
-        int ticks;
-
         std::vector<SDL_Texture *> playerSpriteList;
         std::vector<SDL_Texture *> npcSpriteList;
         std::vector<SDL_Texture *> mapTileList;
         std::vector<SDL_Texture *> iconList;
 
-        std::vector<Entity> entityOrder;
-
+        int ticks;
         bool interacting;
 
-        std::vector<int> above;
-        std::vector<int> below;
-
         void loadGameData(const Game& external);
-        float getDistance(SDL_FRect self, SDL_FRect target);
-        int getClosestTarget(std::vector<Entity>& order, int playeridx, int dir, float width, float height);
 };
 
-float normalize(SDL_FRect rect, bool isY);
 template <typename T>
 bool isEmpty(std::vector<std::vector<T>> container, const char *messageTotal, const char *messageComponent);
 template <typename T>

@@ -6,6 +6,7 @@
             "assets/pointer.png"
         ],
         "bgmusic": [
+            "assets/sound_machine_short.wav",
             "assets/sound_machine.wav"
         ],
         "font": {
@@ -17,6 +18,7 @@
     "entity": {
         "width": 128,
         "height": 128,
+        "speed": 0.7,
         "player": {
             "width": 128,
             "height": 128,
@@ -35,11 +37,13 @@
             "height": 128,
             "texture": [
                 "",
-                "assets/lollipop.png"
+                "assets/lollipop.png",
+                "assets/teeth.png"
             ],
             "id": [
                 "EMPTY",
-                "LOLLI"
+                "LOLLI",
+                "TEETH"
             ]
         }
     },
