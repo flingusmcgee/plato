@@ -4,13 +4,16 @@
 
 class Camera {
     public:
+        Coordinate origin;
         float x, y;
         int dir;
         float tilex, tiley;
         float playerx, playery;
 
-        Coordinate updateCamera(Game& game, Input& input, SDL_FRect& player);
+        void updateCamera(Game& game, Input& input, SDL_FRect& prect);
+        SDL_FRect offset(SDL_FRect rect);
 };
 
-float normalize(SDL_FRect rect, bool isY);
-SDL_FRect offset(SDL_FRect rect, Coordinate origin);
+SDL_FRect getPhysicsAnchor(SDL_FRect rect);
+SDL_FRect getRenderAnchor(SDL_FRect rect);
+SDL_FRect translate(SDL_FRect rect, Coordinate offset);

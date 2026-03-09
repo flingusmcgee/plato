@@ -1,7 +1,7 @@
 #include "Camera.h"
 
 /* Manage scrolling background/moving player based on keypresses and map borders. Returns the origin at which to render non-player entities */
-Coordinate Camera::updateCamera(Game& game, Input& input, SDL_FRect& player) {
+void Camera::updateCamera(Game& game, Input& input, SDL_FRect& prect) {
     /* Controls */
     bool up    = input.isKeyDown(SDL_SCANCODE_W, true) || input.isKeyDown(SDL_SCANCODE_UP, true);
     bool right = input.isKeyDown(SDL_SCANCODE_D, true) || input.isKeyDown(SDL_SCANCODE_RIGHT, true);
@@ -27,47 +27,52 @@ Coordinate Camera::updateCamera(Game& game, Input& input, SDL_FRect& player) {
         }
     }
 
+    prect.x = x + game.SCREENWIDTH / 2;
+    prect.y = y + game.SCREENHEIGHT / 2 + game.SPRITEHEIGHT / 2;
+
     /* Constrain the camera to map dimensions */
-    Coordinate origin;
-    
-    if (x >= 0 && x <= game.TILEWIDTH * game.MAPWIDTH - game.SCREENWIDTH) {
+    const int XCONSTRAINT = game.TILEWIDTH * game.MAPWIDTH - game.SCREENWIDTH;
+    if (x >= 0 && x <= XCONSTRAINT) {
         origin.x = -x;
-        player.x = (game.SCREENWIDTH - game.SPRITEWIDTH) / 2;
     }
     else {
         if (x < 0) {
             origin.x = 0;
-            player.x = (game.SCREENWIDTH - game.SPRITEWIDTH) / 2 + x;
         }
         else {
-            origin.x = -(game.TILEWIDTH * game.MAPWIDTH - game.SCREENWIDTH);
-            player.x = (game.SCREENWIDTH - game.SPRITEWIDTH) / 2 - (game.TILEWIDTH * game.MAPWIDTH - game.SCREENWIDTH) + x;
+            origin.x = -XCONSTRAINT;
         }
     }
-    if (y >= 0 && y <= game.TILEHEIGHT * game.MAPHEIGHT - game.SCREENHEIGHT) {
+    const int YCONSTRAINT = game.TILEHEIGHT * game.MAPHEIGHT - game.SCREENHEIGHT;
+    if (y >= 0 && y <= YCONSTRAINT) {
         origin.y = -y;
-        player.y = (game.SCREENHEIGHT - game.SPRITEHEIGHT) / 2;
     }
     else {
         if (y < 0) {
             origin.y = 0;
-            player.y = (game.SCREENHEIGHT - game.SPRITEHEIGHT) / 2 + y;
         }
         else {
-            origin.y = -(game.TILEHEIGHT * game.MAPHEIGHT - game.SCREENHEIGHT);
-            player.y = (game.SCREENHEIGHT - game.SPRITEHEIGHT) / 2 - (game.TILEHEIGHT * game.MAPHEIGHT - game.SCREENHEIGHT) + y;
+            origin.y = -YCONSTRAINT;
         }
     }
-    
-    return origin;
 }
 
-/* SDL_Render uses the top-left corner of an entity, but game logic considers entities at their middle-bottom */
-float normalize(SDL_FRect rect, bool isY) {
-    return (isY) ? rect.y + rect.h : rect.x + rect.w / 2;
+/* Offsets an object's position to camera origin */
+SDL_FRect Camera::offset(SDL_FRect rect) {
+    return translate(rect, origin);
 }
 
-/* Offsets an object's position. Use 'origin' to determine true screen position */
-SDL_FRect offset(SDL_FRect rect, Coordinate origin) {
-    return { rect.x + origin.x, rect.y + origin.y, rect.w, rect.h };
+/* Game logic considers entities at their middle-bottom, but the top-left is required for SDL_Render */
+SDL_FRect getRenderAnchor(SDL_FRect rect) {
+    return { rect.x - rect.w / 2, rect.y - rect.h, rect.w, rect.h };
+}
+
+/* Inverse of 'getRenderAnchor' */
+SDL_FRect getPhysicsAnchor(SDL_FRect rect) {
+    return { rect.x + rect.w / 2, rect.y + rect.h, rect.w, rect.h };
+}
+
+/* Translates a rect's x and y coordinates */
+SDL_FRect translate(SDL_FRect rect, Coordinate offset) {
+    return { rect.x + offset.x, rect.y + offset.y, rect.w, rect.h };
 }

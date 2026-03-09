@@ -1,7 +1,7 @@
 #include "Render.h"
 
 /* Render visible tiles and map-bound entities using tileset/spriteset info and origin point. Returns the number of rendered tiles */
-int Render::renderMap(SDL_Renderer *renderer, Game& game, std::vector<Entity>& order, SDL_FRect tile, SDL_FRect npc, float origin) {
+int Render::renderMap(SDL_Renderer *renderer, Game& game, std::vector<Entity>& order, SDL_FRect tile, SDL_FRect npc, Coordinate origin) {
     int renderedTiles = 0;
     order = { };
     for (int i = 0; i < game.MAPHEIGHT; ++i) {
@@ -10,15 +10,16 @@ int Render::renderMap(SDL_Renderer *renderer, Game& game, std::vector<Entity>& o
                 SDL_RenderTexture(renderer, game.mapTileList.at(game.MAP[i][j]), NULL, &tile);
                 ++renderedTiles;
                 /* Queue entity processing if applicable */
-                npc.x = tile.x;
-                npc.y = tile.y;
+                npc.x = tile.x + tile.w / 2 - origin.x;
+                npc.y = tile.y + tile.h - origin.y;
                 if (game.NPC[i][j] > 0) {
-                    orderEntity(order, game.NPC[i][j], game.npcSpriteList.at(game.NPC[i][j]), npc);
+                    Entity entity(game.NPC[i][j], "npc", game.npcSpriteList.at(game.NPC[i][j]), npc);
+                    orderEntity(order, entity);
                 }
             }
             tile.x += game.TILEWIDTH;
         }
-        tile.x = origin;
+        tile.x = origin.x;
         tile.y += game.TILEHEIGHT;
     }
 
@@ -26,23 +27,34 @@ int Render::renderMap(SDL_Renderer *renderer, Game& game, std::vector<Entity>& o
 }
 
 /* Aligns entities to a pseudo z-index in preparation of rendering. Returns the index of the newly added entity */
-int Render::orderEntity(std::vector<Entity>& order, int type, SDL_Texture *texture, SDL_FRect rect) {
+int Render::orderEntity(std::vector<Entity>& order, Entity& entity) {
     int idx = 0;
     if (order.empty()) {
-        order.push_back({type, texture, rect});
+        order.push_back(entity);
     }
     else {
         for (auto it = order.begin(); it != order.end(); ++it) {
-            if (normalize(rect, 1) <= normalize((*it).rect, 1)) {
-                order.insert(it, {type, texture, rect});
+            if (entity.prect.y <= (*it).prect.y) {
+                order.insert(it, entity);
                 break;
             }
             ++idx;
         }
-        if (normalize(rect, 1) > normalize(order.back().rect, 1)) {
-            order.push_back({type, texture, rect});
+        if (entity.prect.y > order.back().prect.y) {
+            order.push_back(entity);
         }
     }
 
     return idx;
+}
+
+/* Intended to replace SDL_RenderPoint. Debug purposes only */
+void Render::renderBigPoint(SDL_Renderer *renderer, float x, float y) {
+    SDL_FRect rect;
+    rect.x = x - 5;
+    rect.y = y - 5;
+    rect.w = 10;
+    rect.h = 10;
+    SDL_SetRenderDrawColor(renderer, 0, 0, 255, SDL_ALPHA_OPAQUE);
+    SDL_RenderFillRect(renderer, &rect);
 }

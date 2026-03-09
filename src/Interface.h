@@ -1,6 +1,6 @@
 #pragma once
 #include "Game.h"
-#include "EntityManager.h"
+#include "Entity.h"
 #include "Asset.h"
 
 class Interface {
