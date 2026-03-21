@@ -1,7 +1,7 @@
 #include "Interface.h"
 
 /* Creates text for an entity and toggles interaction boolean */
-void Interface::createTextBox(SDL_Renderer *renderer, Game& game, std::vector<Entity>& order, int closest, int maxWidth) {
+void Interface::createTextBox(SDL_Renderer *renderer, Game& game, Entity entity, int maxWidth) {
     if (!game.interacting) {
         game.interacting = true;
         progress = 0;
@@ -11,7 +11,7 @@ void Interface::createTextBox(SDL_Renderer *renderer, Game& game, std::vector<En
         progress = 1;
         line = text.data.size();
     }
-    else if (page < game.DIALOGUE[order[closest].type].size() - 1) {
+    else if (page < game.DIALOGUE[entity.type].size() - 1) {
         ++page;
         progress = 0;
         line = 0;
@@ -20,9 +20,9 @@ void Interface::createTextBox(SDL_Renderer *renderer, Game& game, std::vector<En
         game.interacting = false;
         clearText();
     }
-    if (game.interacting && closest != -1 && progress < 1) {
+    if (game.interacting && progress < 1) {
         Asset asset;
-        std::string textdata = game.DIALOGUE[order[closest].type][page];
+        std::string textdata = game.DIALOGUE[entity.type][page];
         for (SDL_Texture *bits : text.texture) {
             SDL_DestroyTexture(bits);
         }

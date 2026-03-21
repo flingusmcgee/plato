@@ -12,41 +12,15 @@
         "font": {
             "path": "assets/Barriecito-Regular.ttf",
             "size": 30,
-            "speed": 30
+            "speed": 20
         }
     },
-    "entity": {
-        "width": 128,
-        "height": 128,
-        "speed": 0.7,
-        "player": {
-            "width": 128,
-            "height": 128,
-            "texture": [
-                "assets/timmy_n.png",
-                "assets/timmy_e.png",
-                "assets/timmy_s.png",
-                "assets/timmy_w.png"
-            ],
-            "speed": 1.0,
-            "range": 150,
-            "breadth": 75
-        },
-        "npc": {
-            "width": 128,
-            "height": 128,
-            "texture": [
-                "",
-                "assets/lollipop.png",
-                "assets/teeth.png"
-            ],
-            "id": [
-                "EMPTY",
-                "LOLLI",
-                "TEETH"
-            ]
-        }
-    },
+    "entityid": [
+        "EMPTY",
+        "TIMMY",
+        "LOLLI",
+        "TEETH"
+    ],
     "map": {
         "mapwidth": 6,
         "mapheight": 5,

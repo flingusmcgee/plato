@@ -1,0 +1,55 @@
+{
+    "EMPTY": {
+
+    },
+    "TIMMY": {
+        "group": "player",
+        "texture": {
+            "paths": [
+                "assets/timmy_n.png",
+                "assets/timmy_e.png",
+                "assets/timmy_s.png",
+                "assets/timmy_w.png"
+            ],
+            "width": 128,
+            "height": 128
+        },
+        "hitbox": {
+            "width": 50,
+            "height": 50
+        },
+        "speed": 1.0,
+        "range": 150,
+        "breadth": 75
+    },
+    "LOLLI": {
+        "group": "npc",
+        "texture": {
+            "paths": [
+                "assets/lollipop.png"
+            ],
+            "width": 256,
+            "height": 256
+        },
+        "hitbox": {
+            "width": 0,
+            "height": 0
+        },
+        "speed": 0
+    },
+    "TEETH": {
+        "group": "enemy",
+        "texture": {
+            "paths": [
+                "assets/teeth.png"
+            ],
+            "width": 256,
+            "height": 256
+        },
+        "hitbox": {
+            "width": 50,
+            "height": 50
+        },
+        "speed": 0.7
+    }
+}

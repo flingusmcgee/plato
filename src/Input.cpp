@@ -8,11 +8,11 @@ void Input::initKeyboard() {
     }
 }
 
-void Input::initGamepad(SDL_Gamepad *gamepadIn) {
-    gamepad = gamepadIn;
-    if (buttonJustDown.empty() && gamepad) {
+void Input::initGamepad(SDL_Gamepad *gamepad) {
+    this->gamepad = gamepad;
+    if (buttonJustDown.empty() && this->gamepad) {
         int numbuttons;
-        SDL_GetGamepadBindings(gamepad, &numbuttons);
+        SDL_GetGamepadBindings(this->gamepad, &numbuttons);
         buttonJustDown.resize(numbuttons);
     }
 }
@@ -47,16 +47,16 @@ bool Input::isKeyDown(SDL_Scancode key, bool hold) {
 }
 
 /* Get gamepad button press with options for holding or single stroke */
-bool Input::isButtonDown(SDL_GamepadButton buttonIn, bool hold) {
+bool Input::isButtonDown(SDL_GamepadButton button, bool hold) {
     bool output;
     if (gamepad) {
-        bool button = SDL_GetGamepadButton(gamepad, buttonIn);
-        output = (hold) ? button : buttonJustDown[buttonIn] && button;
-        if (button && buttonJustDown[buttonIn]) {
-            buttonJustDown[buttonIn] = false;
+        bool buttonDown = SDL_GetGamepadButton(gamepad, button);
+        output = (hold) ? buttonDown : buttonJustDown[button] && buttonDown;
+        if (buttonDown && buttonJustDown[button]) {
+            buttonJustDown[button] = false;
         }
-        if (!button && !buttonJustDown[buttonIn]) {
-            buttonJustDown[buttonIn] = true;
+        if (!buttonDown && !buttonJustDown[button]) {
+            buttonJustDown[button] = true;
         }
     }
     return output;

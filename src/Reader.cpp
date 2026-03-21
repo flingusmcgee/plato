@@ -12,12 +12,6 @@ Game Reader::readGameData() {
     Game external;
 
     /* Paths */
-    for (Json::Value string : data["entity"]["player"]["texture"]) {
-        external.SPRITEPATHS.push_back(string.asString());
-    }
-    for (Json::Value string : data["entity"]["npc"]["texture"]) {
-        external.NPCPATHS.push_back(string.asString());
-    }
     for (Json::Value string : data["map"]["texture"]) {
         external.TILEPATHS.push_back(string.asString());
     }
@@ -33,14 +27,6 @@ Game Reader::readGameData() {
     external.FONTPATH = data["game"]["font"]["path"].asString();
     external.FONTSIZE = data["game"]["font"]["size"].asInt();
     external.FONTSPEED = data["game"]["font"]["speed"].asInt();
-    /* Player */
-    external.SPEED = data["entity"]["player"]["speed"].asFloat();
-    external.SPRITEWIDTH = data["entity"]["width"].asInt();
-    external.SPRITEHEIGHT = data["entity"]["height"].asInt();
-    external.RANGE = data["entity"]["player"]["range"].asInt();
-    external.BREADTH = data["entity"]["player"]["breadth"].asInt();
-    /* Entity */
-    external.ENEMYSPEED = data["entity"]["speed"].asFloat();
     /* Map */
     external.TILEWIDTH = data["map"]["tilewidth"].asInt();
     external.TILEHEIGHT = data["map"]["tileheight"].asInt();
@@ -64,11 +50,11 @@ Game Reader::readGameData() {
         row = { };
     }
 
-    /* Obtain spriteset identifiers */
+    /* Obtain entity identifiers */
     std::map<std::string, int> npcset = { };
-    for (int i = 0; i < data["entity"]["npc"]["id"].size(); ++i) {
-        npcset[data["entity"]["npc"]["id"][i].asString()] = i;
-        external.NPCSET.push_back(data["entity"]["npc"]["id"][i].asString());
+    for (int i = 0; i < data["entityid"].size(); ++i) {
+        npcset[data["entityid"][i].asString()] = i;
+        external.NPCSET.push_back(data["entityid"][i].asString());
     }
 
     /* Convert identifiers to integers */
@@ -86,8 +72,8 @@ Game Reader::readGameData() {
     file >> data;
 
     std::vector<std::string> lines = { };
-    for (auto entity : data["text"]) {
-        for (auto line : entity) {
+    for (auto entityid : external.NPCSET) {
+        for (auto line : data[entityid]) {
             lines.push_back(line.asString());
         }
         external.DIALOGUE.push_back(lines);
@@ -95,18 +81,33 @@ Game Reader::readGameData() {
     }
 
     file.close();
+    file.open("data/entity.json", std::ifstream::binary);
+    file >> data;
+
+    for (auto entityid : external.NPCSET) {
+        EntityTemplate entityTemplate;
+        int type = npcset[entityid];
+        entityTemplate.type = type;
+        if (type > 0) {
+            Json::Value entity = data[entityid];
+            entityTemplate.group = entity["group"].asString();
+            for (auto path : entity["texture"]["paths"]) {
+                entityTemplate.texturePaths.push_back(path.asString());
+            }
+            entityTemplate.rect = { 0, 0, entity["texture"]["width"].asFloat(), entity["texture"]["height"].asFloat() };
+            entityTemplate.hitbox = { 0, 0, entity["hitbox"]["width"].asFloat(), entity["hitbox"]["height"].asFloat() };
+            entityTemplate.speed = entity["speed"].asFloat();
+            entityTemplate.range = entity["range"].asInt();
+            entityTemplate.breadth = entity["breadth"].asInt();
+        }
+        external.ENTITYTEMPLATES[entityid] = entityTemplate;
+    }
+
+    file.close();
 
     std::printf(">> SUCCESS\n");
     std::printf(">> CONFIRM\n\n");
 
-    std::printf(">> SPRITEPATHS\n");
-    for (std::string string : external.SPRITEPATHS) {
-        std::printf("%s\n", (!string.empty()) ? string.c_str() : "[NULL]");
-    }
-    std::printf(">> NPCPATHS\n");
-    for (std::string string : external.NPCPATHS) {
-        std::printf("%s\n", (!string.empty()) ? string.c_str() : "[NULL]");
-    }
     std::printf(">> TILEPATHS\n");
     for (std::string string : external.TILEPATHS) {
         std::printf("%s\n", (!string.empty()) ? string.c_str() : "[NULL]");
@@ -127,15 +128,27 @@ Game Reader::readGameData() {
     std::printf("FONTSIZE: %d\n", external.FONTSIZE);
     std::printf("FONTSPEED: %d\n", external.FONTSPEED);
 
-    std::printf("\n>> PLAYER\n");
-    std::printf("SPEED: %.1f\n", external.SPEED);
-    std::printf("SPRITEWIDTH: %d\n", external.SPRITEWIDTH);
-    std::printf("SPRITEHEIGHT: %d\n", external.SPRITEHEIGHT);
-    std::printf("RANGE: %d\n", external.RANGE);
-    std::printf("BREADTH: %d\n", external.BREADTH);
-
     std::printf("\n>> ENTITIES\n");
-    std::printf("ENTITY SPEED: %f\n", external.ENEMYSPEED);
+    for (auto entityid : external.NPCSET) {
+        EntityTemplate entity = external.ENTITYTEMPLATES[entityid];
+        std::printf("%s: %d\n", external.NPCSET[entity.type].c_str(), entity.type);
+        if (entity.type > 0) {
+            std::printf("  GROUP: %s\n", entity.group.c_str());
+            std::printf("  TEXTURES: \n");
+            for (auto path : entity.texturePaths) {
+                std::printf("    %s\n", path.c_str());
+            }
+            std::printf("  RECT: %.1f x %.1f\n", entity.rect.w, entity.rect.h);
+            std::printf("  HITBOX: %.1f x %.1f\n", entity.hitbox.w, entity.hitbox.h);
+            std::printf("  SPEED: %.1f\n", entity.speed);
+            if (entity.range) {
+                std::printf("  RANGE: %d\n", entity.range);
+            }
+            if (entity.breadth) {
+                std::printf("  BREADTH: %d\n", entity.breadth);
+            }
+        }
+    }
 
     std::printf("\n>> MAP\n");
     std::printf("TILEWIDTH: %d\n", external.TILEWIDTH);
@@ -144,8 +157,8 @@ Game Reader::readGameData() {
     std::printf("MAPHEIGHT: %d\n", external.MAPHEIGHT);
 
     std::printf("\n>> LAYOUT\n");
-    for (auto id : tileset) {
-        std::printf("%s: %d\n", id.first.c_str(), id.second);
+    for (auto [s, d] : tileset) {
+        std::printf("%s: %d\n", s.c_str(), d);
     }
     for (std::vector<int> row : external.MAP) {
         for (int num : row) {
@@ -154,8 +167,8 @@ Game Reader::readGameData() {
         std::printf("\n");
     }
 
-    for (auto id : npcset) {
-        std::printf("%s: %d\n", id.first.c_str(), id.second);
+    for (auto [s, d] : npcset) {
+        std::printf("%s: %d\n", s.c_str(), d);
     }
     for (std::vector<int> row : external.NPC) {
         for (int num : row) {
@@ -174,6 +187,7 @@ Game Reader::readGameData() {
         std::printf("\n");
         dialogueidx++;
     }
+
     std::printf("\n>> GAME DATA LOADED - BEGIN PROCESSING\n");
 
     return external;

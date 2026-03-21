@@ -1,25 +1,29 @@
 #include "Render.h"
 
 /* Render visible tiles and map-bound entities using tileset/spriteset info and origin point. Returns the number of rendered tiles */
-int Render::renderMap(SDL_Renderer *renderer, Game& game, std::vector<Entity>& order, SDL_FRect tile, SDL_FRect npc, Coordinate origin) {
+int Render::renderMap(SDL_Renderer *renderer, Game& game, std::vector<Entity>& order, Coordinate origin) {
+    SDL_FRect tile = { 0, 0, (float) game.TILEWIDTH, (float) game.TILEHEIGHT };
     int renderedTiles = 0;
     order = { };
     for (int i = 0; i < game.MAPHEIGHT; ++i) {
         for (int j = 0; j < game.MAPWIDTH; ++j) {
-            if (tile.x > -game.TILEWIDTH && tile.x < game.SCREENWIDTH && tile.y > -game.TILEHEIGHT && tile.y < game.SCREENHEIGHT) {
-                SDL_RenderTexture(renderer, game.mapTileList.at(game.MAP[i][j]), NULL, &tile);
+            SDL_FRect tileOffset = translate(tile, origin);
+            if (isInView(tileOffset, game)) {
+                SDL_RenderTexture(renderer, game.mapTileList.at(game.MAP[i][j]), NULL, &tileOffset);
                 ++renderedTiles;
                 /* Queue entity processing if applicable */
-                npc.x = tile.x + tile.w / 2 - origin.x;
-                npc.y = tile.y + tile.h - origin.y;
+                Coordinate npc;
+                npc.x = getPhysicsAnchor(tile).x;
+                npc.y = getPhysicsAnchor(tile).y;
                 if (game.NPC[i][j] > 0) {
-                    Entity entity(game.NPC[i][j], "npc", game.npcSpriteList.at(game.NPC[i][j]), npc);
+                    Entity entity(game.ENTITYTEMPLATES.at(game.NPCSET[game.NPC[i][j]]));
+                    entity.updateEntity(npc, 0);
                     orderEntity(order, entity);
                 }
             }
             tile.x += game.TILEWIDTH;
         }
-        tile.x = origin.x;
+        tile.x = 0;
         tile.y += game.TILEHEIGHT;
     }
 

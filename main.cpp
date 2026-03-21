@@ -45,11 +45,12 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
 
     /* Load assets into SDL_Texture lists */
     Asset asset;
-    if (!isEmpty(game.SPRITEPATHS, "Empty SPRITEPATHS")) {
-        game.playerSpriteList = asset.loadTexturesInto(renderer, game.SPRITEPATHS);
-    }
-    if (!isEmpty(game.NPCPATHS, "Empty NPCPATHS")) {
-        game.npcSpriteList = asset.loadTexturesInto(renderer, game.NPCPATHS);
+    if (!isEmpty(game.ENTITYTEMPLATES, "Empty ENTITYTEMPLATES")) {
+        for (auto& [_, entityTemplate] : game.ENTITYTEMPLATES) {
+            if (entityTemplate.type > 0) {
+                entityTemplate.textures = asset.loadTexturesInto(renderer, entityTemplate.texturePaths);
+            }
+        }
     }
     if (!isEmpty(game.TILEPATHS, "Empty TILEPATHS")) {
         game.mapTileList = asset.loadTexturesInto(renderer, game.TILEPATHS);
@@ -99,57 +100,62 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     int fps = game.ticks - lastframe;
     lastframe = game.ticks;
 
-    SDL_FRect playerRect { 0, 0, (float) game.SPRITEWIDTH, (float) game.SPRITEHEIGHT };
-    SDL_FRect npcRect    { 0, 0, (float) game.TILEWIDTH,   (float) game.TILEHEIGHT };
-    SDL_FRect tileRect   { 0, 0, (float) game.TILEWIDTH,   (float) game.TILEHEIGHT };
-    SDL_FRect enemyRect  { 50, 50, (float) game.TILEWIDTH, (float) game.TILEWIDTH };
-
     /* Camera and controls */
     static Camera cam;
+    Entity player(game.ENTITYTEMPLATES.at("TIMMY"));
     input.updateJoysticks();
-    Entity player(0, "player", game.playerSpriteList.at(cam.dir/90), playerRect);
-    cam.updateCamera(game, input, player.prect);
+    cam.updateCamera(game, input, player.prect, player.speed);
+    player.updateEntity({ }, cam.dir / 90);
+
+    if (input.isKeyDown(SDL_SCANCODE_E, false)) {
+        cam.reftick = game.ticks;
+    }
+    if (input.isKeyDown(SDL_SCANCODE_E, true)) {
+        cam.shakeCamera(10, game.ticks);
+    }
+    /* x * cos(angle) - y * sin(angle), x * sin(angle) + y * cos(angle) */
 
     /* Render the map tiles and process map-bound entities */
     static Render render;
-    int renderedTiles = render.renderMap(renderer, game, entityOrder, cam.offset(tileRect), npcRect, cam.origin);
+    int renderedTiles = render.renderMap(renderer, game, entityOrder, translate(cam.origin, cam.shakeOffset));
 
     /* Process a temporary enemy character */
-    static Entity enemy(2, "enemy", game.npcSpriteList.at(2), enemyRect);
-    float speedScale = SDL_min(enemy.getDistance(player.prect) / game.RANGE, 1); /* Move further objects faster */
+    static Entity enemy(game.ENTITYTEMPLATES.at("TEETH"));
+    float speedScale = SDL_min(enemy.getDistance(player.prect) / player.range, 1); /* Move further objects faster */
     float angle = enemy.getDirection(player.prect);
-    if (enemy.getDistance(player.prect) > game.RANGE / 2) {
-        enemy.prect = enemy.move(angle, game.ENEMYSPEED * speedScale);
+    if (speedScale < 0.5) {
+        speedScale = 0;
     }
+    enemy.updateEntity(getMoveOffset(angle, enemy.speed * speedScale), 0);
     render.orderEntity(entityOrder, enemy);
 
     /* Ensure the player is the final processed entity to guarantee its index is known */
     int playeridx = render.orderEntity(entityOrder, player);
-    
-    /* Create the player interaction range */
-    float horizontal = (cam.dir % 180) ? game.RANGE : game.BREADTH;
-    float vertical = (cam.dir % 180) ? game.BREADTH : game.RANGE;
-    
-    // SDL_FRect playerrange { cam.offset(player.prect).x - horizontal, cam.offset(player.prect).y - vertical, horizontal * 2, vertical * 2 };
-    // SDL_RenderFillRect(renderer, &playerrange);
-
-    int closest = player.getClosestTarget(entityOrder, "npc", playeridx, cam.dir, horizontal, vertical);
 
     /* Render the entities */
     for (Entity& entity : entityOrder) {
         entity.drect = cam.offset(getRenderAnchor(entity.prect));
-        SDL_RenderTexture(renderer, entity.texture, NULL, &entity.drect);
+        if (isInView(entity.drect, game)) {
+            SDL_RenderTexture(renderer, entity.textures.at(entity.texture), NULL, &entity.drect);
+        }
     }
+
+    /* Create the player interaction range */
+    const float HORIZONTAL = (cam.dir % 180) ? player.range : player.breadth;
+    const float VERTICAL = (cam.dir % 180) ? player.breadth : player.range;
+    
+    // SDL_FRect playerrange { cam.offset(player.prect).x - horizontal, cam.offset(player.prect).y - vertical, horizontal * 2, vertical * 2 };
+    // SDL_RenderFillRect(renderer, &playerrange);
+
+    int closest = player.getClosestTarget(entityOrder, "npc", playeridx, cam.dir, HORIZONTAL, VERTICAL);
 
     /* Interactivity and narration */
     const float TEXTBOXHEIGHT = 120.0f;
     const float TEXTBOXMARGIN = 10.0f;
     if (closest != -1 && !game.DIALOGUE[entityOrder[closest].type].empty()) {
-        SDL_FRect highlighter = entityOrder[closest].drect;
-        highlighter.y += SDL_sinf((float) game.ticks / 300.0f) * 10;
-        SDL_RenderTexture(renderer, game.iconList[0], NULL, &highlighter);
+        entityOrder[closest].highlight(renderer, game);
         if (input.isKeyDown(SDL_SCANCODE_Z, false) || input.isButtonDown(SDL_GAMEPAD_BUTTON_SOUTH, false)) {
-            interface.createTextBox(renderer, game, entityOrder, closest, game.SCREENWIDTH - TEXTBOXMARGIN * 3);
+            interface.createTextBox(renderer, game, entityOrder[closest], game.SCREENWIDTH - TEXTBOXMARGIN * 3);
         }
         if (game.interacting) {
             interface.renderTextBox(renderer, game, TEXTBOXHEIGHT, TEXTBOXMARGIN);
@@ -170,11 +176,14 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     /* Debug text */
     SDL_RenderDebugTextFormat(renderer, 10, 10, "fps: %d", (fps) ? 1000 / fps : 0);
-    SDL_RenderDebugTextFormat(renderer, 10, 20, "x: %.1f", cam.x);
-    SDL_RenderDebugTextFormat(renderer, 10, 30, "y: %.1f", cam.y);
+    SDL_RenderDebugTextFormat(renderer, 10, 20, "x: %.1f", player.prect.x);
+    SDL_RenderDebugTextFormat(renderer, 10, 30, "y: %.1f", player.prect.y);
     SDL_RenderDebugTextFormat(renderer, 10, 40, "facing: %d", cam.dir);
-    SDL_RenderDebugTextFormat(renderer, 10, 50, "rendered tiles / entities: %d / %d", renderedTiles, entityOrder.size());
-    SDL_RenderDebugTextFormat(renderer, 10, 60, "input: %s", input.gamepad ? SDL_GetGamepadName(input.gamepad) : "keyboard");
+    SDL_RenderDebugTextFormat(renderer, 10, 50, "cam x: %.1f", cam.origin.x);
+    SDL_RenderDebugTextFormat(renderer, 10, 60, "cam y: %.1f", cam.origin.y);
+    SDL_RenderDebugTextFormat(renderer, 10, 70, "rendered tiles / entities: %d / %d", renderedTiles, entityOrder.size());
+    SDL_RenderDebugTextFormat(renderer, 10, 80, "input: %s", input.gamepad ? SDL_GetGamepadName(input.gamepad) : "keyboard");
+    SDL_RenderDebugTextFormat(renderer, 10, 90, "collision: %d", player.isColliding(enemy.hitbox) ? 1 : 0);
     for (int i = 0; i < entityOrder.size(); ++i) {
         SDL_RenderDebugTextFormat(renderer, 10, game.SCREENHEIGHT - (entityOrder.size() - i) * 10, "%s %.1f %.1f", game.NPCSET.at(entityOrder[i].type).c_str(), entityOrder[i].prect.x, entityOrder[i].prect.y);
     }
@@ -187,11 +196,10 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
 /* This function runs once at shutdown. */
 void SDL_AppQuit(void *appstate, SDL_AppResult result) {
-    for (SDL_Texture *bits : game.playerSpriteList) {
-        SDL_DestroyTexture(bits);
-    }
-    for (SDL_Texture *bits : game.npcSpriteList) {
-        SDL_DestroyTexture(bits);
+    for (auto& [_, entityTemplate] : game.ENTITYTEMPLATES) {
+        for (SDL_Texture *bits : entityTemplate.textures) {
+            SDL_DestroyTexture(bits);
+        }
     }
     for (SDL_Texture *bits : game.mapTileList) {
         SDL_DestroyTexture(bits);

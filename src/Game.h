@@ -20,12 +20,22 @@ struct Text {
     int reftick;
 };
 
+struct EntityTemplate {
+    int type;
+    std::string group;
+    std::vector<std::string> texturePaths;
+    std::vector<SDL_Texture *> textures;
+    SDL_FRect rect;
+    SDL_FRect hitbox;
+    float speed;
+    int range;
+    int breadth;
+};
+
 class Game {
     public:
         /* Initial game variables */
         /* Paths */
-        std::vector<std::string> SPRITEPATHS;
-        std::vector<std::string> NPCPATHS;
         std::vector<std::string> TILEPATHS;
         std::vector<std::string> ICONPATHS;
         std::vector<std::string> AUDIOPATHS;
@@ -35,14 +45,8 @@ class Game {
         std::string FONTPATH;
         int FONTSIZE;
         int FONTSPEED;
-        /* Player */
-        float SPEED;
-        int SPRITEWIDTH;
-        int SPRITEHEIGHT;
-        int RANGE;
-        int BREADTH;
         /* Entities */
-        float ENEMYSPEED;
+        std::map<std::string, EntityTemplate> ENTITYTEMPLATES;
         /* Map */
         int TILEWIDTH;
         int TILEHEIGHT;
@@ -55,8 +59,6 @@ class Game {
         std::vector<std::vector<std::string>> DIALOGUE;
 
         /* Gameloop variables */
-        std::vector<SDL_Texture *> playerSpriteList;
-        std::vector<SDL_Texture *> npcSpriteList;
         std::vector<SDL_Texture *> mapTileList;
         std::vector<SDL_Texture *> iconList;
 

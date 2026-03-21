@@ -3,8 +3,6 @@
 /* Initialize game data using reader.cpp */
 void Game::loadGameData(const Game& external) {
     /* Paths */
-    SPRITEPATHS  = external.SPRITEPATHS;
-    NPCPATHS     = external.NPCPATHS;
     TILEPATHS    = external.TILEPATHS;
     ICONPATHS    = external.ICONPATHS;
     AUDIOPATHS   = external.AUDIOPATHS;
@@ -14,14 +12,8 @@ void Game::loadGameData(const Game& external) {
     FONTPATH     = external.FONTPATH;
     FONTSIZE     = external.FONTSIZE;
     FONTSPEED    = external.FONTSPEED;
-    /* Player */
-    SPEED        = external.SPEED;
-    SPRITEWIDTH  = external.SPRITEWIDTH;
-    SPRITEHEIGHT = external.SPRITEHEIGHT;
-    RANGE        = external.RANGE;
-    BREADTH      = external.BREADTH;
     /* Entities */
-    ENEMYSPEED   = external.ENEMYSPEED;
+    ENTITYTEMPLATES = external.ENTITYTEMPLATES;
     /* Map */
     TILEWIDTH    = external.TILEWIDTH;
     TILEHEIGHT   = external.TILEHEIGHT;
