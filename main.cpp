@@ -100,12 +100,13 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     int fps = game.ticks - lastframe;
     lastframe = game.ticks;
 
-    /* Camera and controls */
-    static Camera cam;
-    Entity player(game.ENTITYTEMPLATES.at("TIMMY"));
+    entityOrder = { };
     input.updateJoysticks();
-    cam.updateCamera(game, input, player.prect, player.speed);
-    player.updateEntity({ }, cam.dir / 90);
+
+    /* Define the player and the camera */
+    static Entity player(game, "TIMMY");
+    static Camera cam;
+    cam.updateCamera(game, player.prect);
 
     if (input.isKeyDown(SDL_SCANCODE_E, false)) {
         cam.reftick = game.ticks;
@@ -117,37 +118,34 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     /* Render the map tiles and process map-bound entities */
     static Render render;
-    int renderedTiles = render.renderMap(renderer, game, entityOrder, translate(cam.origin, cam.shakeOffset));
+    int renderedTiles = render.renderMap(renderer, game, entityOrder, cam.origin);
 
     /* Process a temporary enemy character */
-    static Entity enemy(game.ENTITYTEMPLATES.at("TEETH"));
+    static Entity enemy(game, "TEETH");
     float speedScale = SDL_min(enemy.getDistance(player.prect) / player.range, 1); /* Move further objects faster */
     float angle = enemy.getDirection(player.prect);
     if (speedScale < 0.5) {
         speedScale = 0;
     }
-    enemy.updateEntity(getMoveOffset(angle, enemy.speed * speedScale), 0);
+    enemy.updateEntity(getMoveOffset(angle, enemy.speed * speedScale), 0, entityOrder);
     render.orderEntity(entityOrder, enemy);
 
     /* Ensure the player is the final processed entity to guarantee its index is known */
+    player.updateEntity(player.getMoveControls(game, input), player.dir / 90, entityOrder);
     int playeridx = render.orderEntity(entityOrder, player);
 
     /* Render the entities */
     for (Entity& entity : entityOrder) {
-        entity.drect = cam.offset(getRenderAnchor(entity.prect));
+        entity.drect = cam.offsetToCamera(getRenderAnchor(entity.prect));
         if (isInView(entity.drect, game)) {
             SDL_RenderTexture(renderer, entity.textures.at(entity.texture), NULL, &entity.drect);
         }
     }
 
     /* Create the player interaction range */
-    const float HORIZONTAL = (cam.dir % 180) ? player.range : player.breadth;
-    const float VERTICAL = (cam.dir % 180) ? player.breadth : player.range;
-    
-    // SDL_FRect playerrange { cam.offset(player.prect).x - horizontal, cam.offset(player.prect).y - vertical, horizontal * 2, vertical * 2 };
-    // SDL_RenderFillRect(renderer, &playerrange);
-
-    int closest = player.getClosestTarget(entityOrder, "npc", playeridx, cam.dir, HORIZONTAL, VERTICAL);
+    const float HORIZONTAL = (SDL_lround(player.dir) % 180) ? player.range : player.breadth;
+    const float VERTICAL = (SDL_lround(player.dir) % 180) ? player.breadth : player.range;
+    int closest = player.getClosestTarget(entityOrder, "npc", playeridx, SDL_lround(player.dir), { 0, 0, HORIZONTAL, VERTICAL });
 
     /* Interactivity and narration */
     const float TEXTBOXHEIGHT = 120.0f;
@@ -174,11 +172,22 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 255, SDL_ALPHA_OPAQUE);
     SDL_RenderLine(renderer, 0, 0, game.SCREENWIDTH, game.SCREENHEIGHT);
 
+    /* Show boxes */
+    if (game.SHOWBOXES) {
+        SDL_FRect playerrange { cam.offsetToCamera(player.prect).x - HORIZONTAL / 2, cam.offsetToCamera(player.prect).y - VERTICAL / 2, HORIZONTAL, VERTICAL };
+        SDL_RenderRect(renderer, &playerrange);
+        for (Entity& entity : entityOrder) {
+            render.renderBigPoint(renderer, cam.offsetToCamera(entity.prect).x, cam.offsetToCamera(entity.prect).y);
+            SDL_FRect hitbox { cam.offsetToCamera(entity.hitbox).x, cam.offsetToCamera(entity.hitbox).y, entity.hitbox.w, entity.hitbox.h };
+            SDL_RenderRect(renderer, &hitbox);
+        }
+    }
+
     /* Debug text */
     SDL_RenderDebugTextFormat(renderer, 10, 10, "fps: %d", (fps) ? 1000 / fps : 0);
     SDL_RenderDebugTextFormat(renderer, 10, 20, "x: %.1f", player.prect.x);
     SDL_RenderDebugTextFormat(renderer, 10, 30, "y: %.1f", player.prect.y);
-    SDL_RenderDebugTextFormat(renderer, 10, 40, "facing: %d", cam.dir);
+    SDL_RenderDebugTextFormat(renderer, 10, 40, "facing: %d", SDL_lround(player.dir));
     SDL_RenderDebugTextFormat(renderer, 10, 50, "cam x: %.1f", cam.origin.x);
     SDL_RenderDebugTextFormat(renderer, 10, 60, "cam y: %.1f", cam.origin.y);
     SDL_RenderDebugTextFormat(renderer, 10, 70, "rendered tiles / entities: %d / %d", renderedTiles, entityOrder.size());

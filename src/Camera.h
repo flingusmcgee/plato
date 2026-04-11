@@ -5,16 +5,14 @@
 class Camera {
     public:
         Coordinate origin;
-        float x, y;
-        int dir;
         float tilex, tiley;
         float playerx, playery;
 
         Coordinate shakeOffset;
         int reftick;
 
-        void updateCamera(Game& game, Input& input, SDL_FRect& prect, float speed);
-        SDL_FRect offset(SDL_FRect rect);
+        void updateCamera(Game& game, SDL_FRect& prect);
+        SDL_FRect offsetToCamera(SDL_FRect rect);
         void shakeCamera(int strength, int tick);
 };
 

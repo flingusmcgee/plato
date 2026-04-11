@@ -27,6 +27,7 @@ Game Reader::readGameData() {
     external.FONTPATH = data["game"]["font"]["path"].asString();
     external.FONTSIZE = data["game"]["font"]["size"].asInt();
     external.FONTSPEED = data["game"]["font"]["speed"].asInt();
+    external.SHOWBOXES = data["game"]["showboxes"].asBool();
     /* Map */
     external.TILEWIDTH = data["map"]["tilewidth"].asInt();
     external.TILEHEIGHT = data["map"]["tileheight"].asInt();
@@ -67,6 +68,7 @@ Game Reader::readGameData() {
         row = { };
     }
 
+    /* Capture dialogue */
     file.close();
     file.open("data/dialogue.json", std::ifstream::binary);
     file >> data;
@@ -80,6 +82,7 @@ Game Reader::readGameData() {
         lines = { };
     }
 
+    /* Convert entity data into templates */
     file.close();
     file.open("data/entity.json", std::ifstream::binary);
     file >> data;
@@ -127,6 +130,7 @@ Game Reader::readGameData() {
     std::printf("FONTPATH: %s\n", external.FONTPATH.c_str());
     std::printf("FONTSIZE: %d\n", external.FONTSIZE);
     std::printf("FONTSPEED: %d\n", external.FONTSPEED);
+    std::printf("SHOWBOXES: %s\n", external.SHOWBOXES ? "TRUE" : "FALSE");
 
     std::printf("\n>> ENTITIES\n");
     for (auto entityid : external.NPCSET) {

@@ -45,6 +45,7 @@ class Game {
         std::string FONTPATH;
         int FONTSIZE;
         int FONTSPEED;
+        bool SHOWBOXES;
         /* Entities */
         std::map<std::string, EntityTemplate> ENTITYTEMPLATES;
         /* Map */

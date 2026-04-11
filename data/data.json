@@ -13,7 +13,8 @@
             "path": "assets/Barriecito-Regular.ttf",
             "size": 30,
             "speed": 20
-        }
+        },
+        "showboxes": false
     },
     "entityid": [
         "EMPTY",
@@ -52,7 +53,7 @@
             "BLANK", "WATER", "WATER", "WATER", "WATER", "SAND"
         ],
         "npc": [
-            "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY",
+            "EMPTY", "LOLLI", "EMPTY", "EMPTY", "EMPTY", "EMPTY",
             "EMPTY", "EMPTY", "EMPTY", "LOLLI", "EMPTY", "EMPTY",
             "EMPTY", "EMPTY", "LOLLI", "LOLLI", "EMPTY", "EMPTY",
             "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY",

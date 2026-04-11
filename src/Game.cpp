@@ -1,6 +1,6 @@
 #include "Game.h"
 
-/* Initialize game data using reader.cpp */
+/* Initialize game data using `reader.cpp` */
 void Game::loadGameData(const Game& external) {
     /* Paths */
     TILEPATHS    = external.TILEPATHS;
@@ -12,6 +12,7 @@ void Game::loadGameData(const Game& external) {
     FONTPATH     = external.FONTPATH;
     FONTSIZE     = external.FONTSIZE;
     FONTSPEED    = external.FONTSPEED;
+    SHOWBOXES    = external.SHOWBOXES;
     /* Entities */
     ENTITYTEMPLATES = external.ENTITYTEMPLATES;
     /* Map */

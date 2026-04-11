@@ -4,7 +4,6 @@
 int Render::renderMap(SDL_Renderer *renderer, Game& game, std::vector<Entity>& order, Coordinate origin) {
     SDL_FRect tile = { 0, 0, (float) game.TILEWIDTH, (float) game.TILEHEIGHT };
     int renderedTiles = 0;
-    order = { };
     for (int i = 0; i < game.MAPHEIGHT; ++i) {
         for (int j = 0; j < game.MAPWIDTH; ++j) {
             SDL_FRect tileOffset = translate(tile, origin);
@@ -16,8 +15,8 @@ int Render::renderMap(SDL_Renderer *renderer, Game& game, std::vector<Entity>& o
                 npc.x = getPhysicsAnchor(tile).x;
                 npc.y = getPhysicsAnchor(tile).y;
                 if (game.NPC[i][j] > 0) {
-                    Entity entity(game.ENTITYTEMPLATES.at(game.NPCSET[game.NPC[i][j]]));
-                    entity.updateEntity(npc, 0);
+                    Entity entity(game, game.NPCSET[game.NPC[i][j]]);
+                    entity.updateEntity(npc, 0, order);
                     orderEntity(order, entity);
                 }
             }
@@ -52,13 +51,13 @@ int Render::orderEntity(std::vector<Entity>& order, Entity& entity) {
     return idx;
 }
 
-/* Intended to replace SDL_RenderPoint. Debug purposes only */
+/* Intended to replace `SDL_RenderPoint`. Debug purposes only */
 void Render::renderBigPoint(SDL_Renderer *renderer, float x, float y) {
     SDL_FRect rect;
-    rect.x = x - 5;
-    rect.y = y - 5;
-    rect.w = 10;
-    rect.h = 10;
+    rect.x = x - 3;
+    rect.y = y - 3;
+    rect.w = 6;
+    rect.h = 6;
     SDL_SetRenderDrawColor(renderer, 0, 0, 255, SDL_ALPHA_OPAQUE);
     SDL_RenderFillRect(renderer, &rect);
 }
