@@ -7,14 +7,46 @@ Entity::Entity(Game& game, std::string name) {
     textures = entityTemplate.textures;
     prect    = entityTemplate.rect;
     hitbox   = entityTemplate.hitbox;
+    hitboxLayer = entityTemplate.hitboxLayer;
     speed    = entityTemplate.speed;
     range    = entityTemplate.range;
-    breadth  = entityTemplate.breadth;
 
     if (type == 1) {
         prect.x = game.SCREENWIDTH / 2;
         prect.y = game.SCREENHEIGHT / 2 + prect.h / 2;
     }
+}
+
+/* Manages movement and animations */
+void Entity::updateEntity(Coordinate offset, int texture, std::vector<Entity>& order) {
+    hitbox.x = prect.x - hitbox.w / 2 + offset.x;
+    for (Entity entity : order) {
+        if (entity.hitboxLayer <= hitboxLayer) {
+            if (isColliding(entity.hitbox)) {
+                hitbox.x -= offset.x;
+                break;
+            }
+        }
+    }
+    hitbox.y = prect.y - hitbox.h + offset.y;
+    for (Entity entity : order) {
+        if (entity.hitboxLayer <= hitboxLayer) {
+            if (isColliding(entity.hitbox)) {
+                hitbox.y -= offset.y;
+                break;
+            }
+        }
+    }
+    prect.x = getPhysicsAnchor(hitbox).x;
+    prect.y = getPhysicsAnchor(hitbox).y;
+    this->texture = texture;
+}
+
+void Entity::highlight(SDL_Renderer *renderer, const Game& game) {
+    const float DISTANCE = 10;
+    SDL_FRect highlighter = drect;
+    highlighter.y += SDL_sinf((float) game.ticks / NSCOEFFICIENT * game.ANIMATIONSPEED) * DISTANCE;
+    SDL_RenderTexture(renderer, game.iconList[0], NULL, &highlighter);
 }
 
 /* Control an entity with user input */
@@ -27,85 +59,56 @@ Coordinate Entity::getMoveControls(Game& game, Input& input) {
 
     Coordinate offset { 0, 0 };
     if (!game.interacting) {
-        if (up || (input.ly < -JOYSTICKTHRESHOLD && SDL_abs(input.ly) > SDL_abs(input.lx))) {
-            offset.y -= speed;
-            dir = 0;
+        if (up || input.ly < -JOYSTICKTHRESHOLD) {
+            offset.y -= 1;
         }
-        else if (right || (input.lx > JOYSTICKTHRESHOLD && SDL_abs(input.lx) > SDL_abs(input.ly))) {
-            offset.x += speed;
-            dir = 90;
+        if (right || input.lx > JOYSTICKTHRESHOLD) {
+            offset.x += 1;
         }
-        else if (down || (input.ly > JOYSTICKTHRESHOLD && SDL_abs(input.ly) > SDL_abs(input.lx))) {
-            offset.y += speed;
-            dir = 180;
+        if (down || input.ly > JOYSTICKTHRESHOLD) {
+            offset.y += 1;
         }
-        else if (left || (input.lx < -JOYSTICKTHRESHOLD && SDL_abs(input.lx) > SDL_abs(input.ly))) {
-            offset.x -= speed;
-            dir = 270;
+        if (left || input.lx < -JOYSTICKTHRESHOLD) {
+            offset.x -= 1;
+        }
+        if (offset.x != 0 || offset.y != 0) {
+            dir = SDL_atan2f(offset.y, offset.x) * 180 / SDL_PI_F;
+            float throttle = SDL_sqrtf(offset.x * offset.x + offset.y * offset.y);
+            offset.x /= throttle;
+            offset.y /= throttle;
         }
     }
     return offset;
 }
 
-/* Manages movement and animations */
-void Entity::updateEntity(Coordinate offset, int texture, std::vector<Entity>& order) {
-    hitbox.x = prect.x - hitbox.w / 2 + offset.x;
-    for (Entity entity : order) {
-        if (isColliding(entity.hitbox)) {
-            hitbox.x -= offset.x;
-            break;
-        }
-    }
-    hitbox.y = prect.y - hitbox.h + offset.y;
-    for (Entity entity : order) {
-        if (isColliding(entity.hitbox)) {
-            hitbox.y -= offset.y;
-            break;
-        }
-    }
-    prect.x = getPhysicsAnchor(hitbox).x;
-    prect.y = getPhysicsAnchor(hitbox).y;
-    this->texture = texture;
-}
-
-/* Finds the closest entities within a rectangle above and below an entity. Can be configured to search only in a group */
-int Entity::getClosestTarget(std::vector<Entity>& order, std::string group, int entityidx, int dir, SDL_FRect bound) {
-    above = { };
-    below = { };
-
-    float xdist;
+/* Finds the closest entities within a circle around an entity. Can be configured to search only in a group */
+int Entity::getClosestTarget(std::vector<Entity>& order, std::string group, int entityidx, float entitydir, float range) {
+    inRange = { };
     float closestdist;
     int closest = -1;
-
-    for (int i = entityidx - 1; i >= 0; --i) {
-        if (order[i].prect.y - order[entityidx].prect.y <= -bound.h / 2) {
-            break;
-        }
-        if (order[i].group != group && !group.empty()) {
-            continue;
-        }
-        xdist = order[i].prect.x - order[entityidx].prect.x;
-        if (SDL_fabsf(xdist) <= bound.w / 2 && (xdist * (dir - 180) < 0 || dir % 180 == 0)) {
-            above.push_back(i);
-            if (dir != 180 && (order[i].getDistance(order[entityidx].prect) < closestdist || closest == -1)) {
-                closest = i;
-                closestdist = order[i].getDistance(order[entityidx].prect);
-            }
-        }
+    int lastidx = entityidx;
+    while (lastidx > 0 && order[entityidx].prect.y - order[lastidx - 1].prect.y <= range) {
+        --lastidx;
     }
-    for (int i = entityidx + 1; i <= order.size() - 1; ++i) {
-        if (order[i].prect.y - order[entityidx].prect.y >= bound.h / 2) {
+    for (int i = lastidx; i < order.size(); ++i) {
+        if (SDL_fabsf(order[entityidx].prect.y - order[i].prect.y) > range) {
             break;
         }
         if (order[i].group != group && !group.empty()) {
             continue;
         }
-        xdist = order[i].prect.x - order[entityidx].prect.x;
-        if (SDL_fabsf(xdist) <= bound.w / 2 && (xdist * (dir - 180) < 0 || dir % 180 == 0)) {
-            below.push_back(i);
-            if (dir != 0 && (order[i].getDistance(order[entityidx].prect) < closestdist || closest == -1)) {
+        if (i == entityidx) {
+            continue;
+        }
+        float dist = order[entityidx].getDistance(order[i].prect);
+        float dir = order[entityidx].getDirection(order[i].prect) * 180 / SDL_PI_F;
+        if (dist <= range) {
+            inRange.push_back(i);
+            float deltadir = SDL_fabs(dir - entitydir);
+            const float CONE = 40;
+            if (SDL_min(deltadir, 360 - deltadir) < CONE && (dist < closestdist || closest == -1)) {
                 closest = i;
-                closestdist = order[i].getDistance(order[entityidx].prect);
+                closestdist = dist;
             }
         }
     }
@@ -123,14 +126,6 @@ float Entity::getDirection(SDL_FRect target) {
     return SDL_atan2f(target.y - prect.y, target.x - prect.x);
 }
 
-void Entity::highlight(SDL_Renderer *renderer, const Game& game) {
-    const float SPEED = 300;
-    const float DISTANCE = 10;
-    SDL_FRect highlighter = drect;
-    highlighter.y += SDL_sinf((float) game.ticks / SPEED) * DISTANCE;
-    SDL_RenderTexture(renderer, game.iconList[0], NULL, &highlighter);
-}
-
 bool Entity::isColliding(SDL_FRect target) {
     const float SELFTOP = hitbox.y;
     const float SELFBOTTOM = hitbox.y + hitbox.h;
@@ -142,4 +137,20 @@ bool Entity::isColliding(SDL_FRect target) {
     const float TARGETRIGHT = target.x + target.w;
 
     return SELFTOP < TARGETBOTTOM && SELFBOTTOM > TARGETTOP && SELFRIGHT > TARGETLEFT && SELFLEFT < TARGETRIGHT;
+}
+
+int Entity::getSprite() {
+    if (dir == -90) {
+        return 0;
+    }
+    if (SDL_fabsf(dir) < 90) {
+        return 1;
+    }
+    if (dir == 90) {
+        return 2;
+    }
+    if (SDL_fabsf(dir) > 90) {
+        return 3;
+    }
+    return 0;
 }

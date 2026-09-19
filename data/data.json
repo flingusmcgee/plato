@@ -12,9 +12,12 @@
         "font": {
             "path": "assets/Barriecito-Regular.ttf",
             "size": 30,
-            "speed": 20
+            "speed": 40
         },
-        "showboxes": false
+        "animation": {
+            "speed": 12
+        },
+        "showboxes": true
     },
     "entityid": [
         "EMPTY",

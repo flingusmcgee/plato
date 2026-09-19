@@ -9,7 +9,7 @@ void Interface::createTextBox(SDL_Renderer *renderer, Game& game, Entity entity,
     }
     else if (progress < 1) {
         progress = 1;
-        line = text.data.size();
+        line = text.data.size() - 1;
     }
     else if (page < game.DIALOGUE[entity.type].size() - 1) {
         ++page;
@@ -38,7 +38,7 @@ void Interface::renderTextBox(SDL_Renderer *renderer, const Game& game, float he
     SDL_FRect textrect = { margin * 2, game.SCREENHEIGHT - height, 0, text.h };
 
     if (progress < 1) {
-        progress = SDL_min((float) (game.ticks - text.reftick) / (game.FONTSPEED * text.data[line].length()), 1);
+        progress = SDL_min((float) (game.ticks - text.reftick) / NSCOEFFICIENT / text.data[line].length() * game.FONTSPEED, 1);
     }
     else if (line < text.data.size() - 1) {
         ++line;

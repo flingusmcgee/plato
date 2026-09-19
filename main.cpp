@@ -95,9 +95,9 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_SetRenderDrawColor(renderer, 249, 245, 236, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
-    game.ticks = SDL_GetTicks();
-    static int lastframe;
-    int fps = game.ticks - lastframe;
+    game.ticks = SDL_GetTicksNS();
+    static Uint64 lastframe;
+    game.delta = (float) (game.ticks - lastframe) / NSCOEFFICIENT;
     lastframe = game.ticks;
 
     entityOrder = { };
@@ -127,12 +127,13 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     if (speedScale < 0.5) {
         speedScale = 0;
     }
-    enemy.updateEntity(getMoveOffset(angle, enemy.speed * speedScale), 0, entityOrder);
+    enemy.updateEntity(getMoveOffset(angle, enemy.speed * speedScale * game.delta), 0, entityOrder);
     render.orderEntity(entityOrder, enemy);
 
     /* Ensure the player is the final processed entity to guarantee its index is known */
-    player.updateEntity(player.getMoveControls(game, input), player.dir / 90, entityOrder);
+    player.updateEntity(player.getMoveControls(game, input) * player.speed * game.delta, player.getSprite(), entityOrder);
     int playeridx = render.orderEntity(entityOrder, player);
+    int closest = player.getClosestTarget(entityOrder, "npc", playeridx, player.dir, player.range);
 
     /* Render the entities */
     for (Entity& entity : entityOrder) {
@@ -141,11 +142,6 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
             SDL_RenderTexture(renderer, entity.textures.at(entity.texture), NULL, &entity.drect);
         }
     }
-
-    /* Create the player interaction range */
-    const float HORIZONTAL = (SDL_lround(player.dir) % 180) ? player.range : player.breadth;
-    const float VERTICAL = (SDL_lround(player.dir) % 180) ? player.breadth : player.range;
-    int closest = player.getClosestTarget(entityOrder, "npc", playeridx, SDL_lround(player.dir), { 0, 0, HORIZONTAL, VERTICAL });
 
     /* Interactivity and narration */
     const float TEXTBOXHEIGHT = 120.0f;
@@ -174,25 +170,34 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     /* Show boxes */
     if (game.SHOWBOXES) {
-        SDL_FRect playerrange { cam.offsetToCamera(player.prect).x - HORIZONTAL / 2, cam.offsetToCamera(player.prect).y - VERTICAL / 2, HORIZONTAL, VERTICAL };
-        SDL_RenderRect(renderer, &playerrange);
+        render.renderCircle(renderer, cam.offsetToCamera(player.prect).x, cam.offsetToCamera(player.prect).y, player.range);
         for (Entity& entity : entityOrder) {
-            render.renderBigPoint(renderer, cam.offsetToCamera(entity.prect).x, cam.offsetToCamera(entity.prect).y);
+            render.renderBigPoint(renderer, cam.offsetToCamera(entity.prect).x, cam.offsetToCamera(entity.prect).y, 6);
             SDL_FRect hitbox { cam.offsetToCamera(entity.hitbox).x, cam.offsetToCamera(entity.hitbox).y, entity.hitbox.w, entity.hitbox.h };
+            if (entity.hitboxLayer == 1) {
+                SDL_SetRenderDrawColor(renderer, 0, 255, 255, SDL_ALPHA_OPAQUE);
+            }
+            if (entity.hitboxLayer == 2) {
+                SDL_SetRenderDrawColor(renderer, 255, 0, 255, SDL_ALPHA_OPAQUE);
+            }
+            if (entity.hitboxLayer == 3) {
+                SDL_SetRenderDrawColor(renderer, 255, 255, 0, SDL_ALPHA_OPAQUE);
+            }
             SDL_RenderRect(renderer, &hitbox);
+            SDL_SetRenderDrawColor(renderer, 0, 0, 255, SDL_ALPHA_OPAQUE);
         }
     }
 
     /* Debug text */
-    SDL_RenderDebugTextFormat(renderer, 10, 10, "fps: %d", (fps) ? 1000 / fps : 0);
+    SDL_RenderDebugTextFormat(renderer, 10, 10, "fps: %.1f", (game.delta) ? 1.0f / game.delta : 0);
     SDL_RenderDebugTextFormat(renderer, 10, 20, "x: %.1f", player.prect.x);
     SDL_RenderDebugTextFormat(renderer, 10, 30, "y: %.1f", player.prect.y);
-    SDL_RenderDebugTextFormat(renderer, 10, 40, "facing: %d", SDL_lround(player.dir));
+    SDL_RenderDebugTextFormat(renderer, 10, 40, "facing: %.1f", player.dir);
     SDL_RenderDebugTextFormat(renderer, 10, 50, "cam x: %.1f", cam.origin.x);
     SDL_RenderDebugTextFormat(renderer, 10, 60, "cam y: %.1f", cam.origin.y);
     SDL_RenderDebugTextFormat(renderer, 10, 70, "rendered tiles / entities: %d / %d", renderedTiles, entityOrder.size());
     SDL_RenderDebugTextFormat(renderer, 10, 80, "input: %s", input.gamepad ? SDL_GetGamepadName(input.gamepad) : "keyboard");
-    SDL_RenderDebugTextFormat(renderer, 10, 90, "collision: %d", player.isColliding(enemy.hitbox) ? 1 : 0);
+
     for (int i = 0; i < entityOrder.size(); ++i) {
         SDL_RenderDebugTextFormat(renderer, 10, game.SCREENHEIGHT - (entityOrder.size() - i) * 10, "%s %.1f %.1f", game.NPCSET.at(entityOrder[i].type).c_str(), entityOrder[i].prect.x, entityOrder[i].prect.y);
     }

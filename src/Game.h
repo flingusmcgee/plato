@@ -7,9 +7,15 @@
 #include <vector>
 #include <map>
 
+const Uint32 NSCOEFFICIENT = 1'000'000'000;
+
 struct Coordinate {
     float x;
     float y;
+
+    Coordinate operator*(float scalar) {
+        return { this->x * scalar, this->y * scalar };
+    }
 };
 
 struct Text {
@@ -17,7 +23,7 @@ struct Text {
     std::vector<std::string> data;
     std::vector<float> w;
     float h;
-    int reftick;
+    Uint64 reftick;
 };
 
 struct EntityTemplate {
@@ -27,9 +33,9 @@ struct EntityTemplate {
     std::vector<SDL_Texture *> textures;
     SDL_FRect rect;
     SDL_FRect hitbox;
+    int hitboxLayer;
     float speed;
     int range;
-    int breadth;
 };
 
 class Game {
@@ -45,6 +51,7 @@ class Game {
         std::string FONTPATH;
         int FONTSIZE;
         int FONTSPEED;
+        int ANIMATIONSPEED;
         bool SHOWBOXES;
         /* Entities */
         std::map<std::string, EntityTemplate> ENTITYTEMPLATES;
@@ -63,7 +70,8 @@ class Game {
         std::vector<SDL_Texture *> mapTileList;
         std::vector<SDL_Texture *> iconList;
 
-        int ticks;
+        float delta;
+        Uint64 ticks;
         bool interacting;
 
         void loadGameData(const Game& external);

@@ -12,6 +12,7 @@ void Game::loadGameData(const Game& external) {
     FONTPATH     = external.FONTPATH;
     FONTSIZE     = external.FONTSIZE;
     FONTSPEED    = external.FONTSPEED;
+    ANIMATIONSPEED  = external.ANIMATIONSPEED;
     SHOWBOXES    = external.SHOWBOXES;
     /* Entities */
     ENTITYTEMPLATES = external.ENTITYTEMPLATES;

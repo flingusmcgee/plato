@@ -52,12 +52,18 @@ int Render::orderEntity(std::vector<Entity>& order, Entity& entity) {
 }
 
 /* Intended to replace `SDL_RenderPoint`. Debug purposes only */
-void Render::renderBigPoint(SDL_Renderer *renderer, float x, float y) {
+void Render::renderBigPoint(SDL_Renderer *renderer, float x, float y, float size) {
     SDL_FRect rect;
-    rect.x = x - 3;
-    rect.y = y - 3;
-    rect.w = 6;
-    rect.h = 6;
+    rect.x = x - size / 2;
+    rect.y = y - size / 2;
+    rect.w = size;
+    rect.h = size;
     SDL_SetRenderDrawColor(renderer, 0, 0, 255, SDL_ALPHA_OPAQUE);
     SDL_RenderFillRect(renderer, &rect);
+}
+
+void Render::renderCircle(SDL_Renderer *renderer, float x, float y, float radius) {
+    for (int i = 0; i < 16; ++i) {
+        renderBigPoint(renderer, x + SDL_sinf(i * SDL_PI_F / 8) * radius, y + SDL_cosf(i * SDL_PI_F / 8) * radius, 2);
+    }
 }

@@ -10,8 +10,7 @@
  */
 class Entity {
     private:
-        std::vector<int> above;
-        std::vector<int> below;
+        std::vector<int> inRange;
 
     public:
         Entity(Game& game, std::string name);
@@ -23,16 +22,21 @@ class Entity {
         SDL_FRect prect; /* Physics position */
         SDL_FRect drect; /* Rendering position */
         SDL_FRect hitbox;
+        int hitboxLayer;
         float speed;
         float dir;
-        int range;   /* Player only */
-        int breadth; /* Player only */
+        int range;
+        std::map<std::string, int> effects;
+        int health;
 
-        Coordinate getMoveControls(Game& game, Input& input);
         void updateEntity(Coordinate offset, int texture, std::vector<Entity>& order);
-        int getClosestTarget(std::vector<Entity>& order, std::string group, int playeridx, int dir, SDL_FRect bound);
+        void inflictDamage(int amount);
+        void inflictEffect(std::string effect, int duration);
+        void highlight(SDL_Renderer *renderer, const Game& game);
+        Coordinate getMoveControls(Game& game, Input& input);
+        int getClosestTarget(std::vector<Entity>& order, std::string group, int playeridx, float entitydir, float range);
         float getDistance(SDL_FRect target);
         float getDirection(SDL_FRect target);
-        void highlight(SDL_Renderer *renderer, const Game& game);
         bool isColliding(SDL_FRect target);
+        int getSprite();
 };
