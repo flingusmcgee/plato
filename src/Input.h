@@ -18,4 +18,5 @@ class Input {
         void updateJoysticks();
         bool isKeyDown(SDL_Scancode key, bool hold);
         bool isButtonDown(SDL_GamepadButton buttonIn, bool hold);
+        Vector getMoveControls(const Game& game, float& dir);
 };

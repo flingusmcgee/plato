@@ -9,11 +9,14 @@
 
 const Uint32 NSCOEFFICIENT = 1'000'000'000;
 
-struct Coordinate {
+struct Vector {
     float x;
     float y;
 
-    Coordinate operator*(float scalar) {
+    Vector operator+(Vector vector) {
+        return { this->x + vector.x, this->y + vector.y };
+    }
+    Vector operator*(float scalar) {
         return { this->x * scalar, this->y * scalar };
     }
 };
@@ -69,13 +72,18 @@ class Game {
         /* Gameloop variables */
         std::vector<SDL_Texture *> mapTileList;
         std::vector<SDL_Texture *> iconList;
-
-        float delta;
         Uint64 ticks;
+        float delta;
         bool interacting;
 
         void loadGameData(const Game& external);
 };
+
+SDL_FRect getRenderAnchor(SDL_FRect rect);
+SDL_FRect getPhysicsAnchor(SDL_FRect rect);
+SDL_FRect translate(SDL_FRect rect, Vector offset);
+Vector getVector(float angle, float magnitude);
+bool isInView(SDL_FRect rect, const Game& game);
 
 template <typename T>
 bool isEmpty(std::vector<std::vector<T>> container, const char *messageTotal, const char *messageComponent);

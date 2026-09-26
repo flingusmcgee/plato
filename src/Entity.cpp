@@ -1,6 +1,6 @@
 #include "Entity.h"
 
-Entity::Entity(Game& game, std::string name) {
+Entity::Entity(const Game& game, std::string name) {
     EntityTemplate entityTemplate = game.ENTITYTEMPLATES.at(name);
     type     = entityTemplate.type;
     group    = entityTemplate.group;
@@ -18,12 +18,23 @@ Entity::Entity(Game& game, std::string name) {
 }
 
 /* Manages movement and animations */
-void Entity::updateEntity(Coordinate offset, int texture, std::vector<Entity>& order) {
+void Entity::updateEntity(Vector offset, int texture) {
+    hitbox.x = offset.x;
+    hitbox.y = offset.y;
+    prect.x = getPhysicsAnchor(hitbox).x;
+    prect.y = getPhysicsAnchor(hitbox).y;
+    this->texture = texture;
+}
+
+/* Tests an offset against collisions and applies it to displacement */
+void Entity::applyDisplacement(Vector offset, const std::vector<Entity>& order) {
+    SDL_FRect originHitbox = hitbox;
+
     hitbox.x = prect.x - hitbox.w / 2 + offset.x;
     for (Entity entity : order) {
         if (entity.hitboxLayer <= hitboxLayer) {
             if (isColliding(entity.hitbox)) {
-                hitbox.x -= offset.x;
+                hitbox.x = originHitbox.x;
                 break;
             }
         }
@@ -32,14 +43,14 @@ void Entity::updateEntity(Coordinate offset, int texture, std::vector<Entity>& o
     for (Entity entity : order) {
         if (entity.hitboxLayer <= hitboxLayer) {
             if (isColliding(entity.hitbox)) {
-                hitbox.y -= offset.y;
+                hitbox.y = originHitbox.y;
                 break;
             }
         }
     }
-    prect.x = getPhysicsAnchor(hitbox).x;
-    prect.y = getPhysicsAnchor(hitbox).y;
-    this->texture = texture;
+
+    displacement = { hitbox.x, hitbox.y };
+    hitbox = originHitbox;
 }
 
 void Entity::highlight(SDL_Renderer *renderer, const Game& game) {
@@ -49,40 +60,8 @@ void Entity::highlight(SDL_Renderer *renderer, const Game& game) {
     SDL_RenderTexture(renderer, game.iconList[0], NULL, &highlighter);
 }
 
-/* Control an entity with user input */
-Coordinate Entity::getMoveControls(Game& game, Input& input) {
-    const int JOYSTICKTHRESHOLD = 10000;
-    bool up    = input.isKeyDown(SDL_SCANCODE_W, true) || input.isKeyDown(SDL_SCANCODE_UP, true);
-    bool right = input.isKeyDown(SDL_SCANCODE_D, true) || input.isKeyDown(SDL_SCANCODE_RIGHT, true);
-    bool down  = input.isKeyDown(SDL_SCANCODE_S, true) || input.isKeyDown(SDL_SCANCODE_DOWN, true);
-    bool left  = input.isKeyDown(SDL_SCANCODE_A, true) || input.isKeyDown(SDL_SCANCODE_LEFT, true);
-
-    Coordinate offset { 0, 0 };
-    if (!game.interacting) {
-        if (up || input.ly < -JOYSTICKTHRESHOLD) {
-            offset.y -= 1;
-        }
-        if (right || input.lx > JOYSTICKTHRESHOLD) {
-            offset.x += 1;
-        }
-        if (down || input.ly > JOYSTICKTHRESHOLD) {
-            offset.y += 1;
-        }
-        if (left || input.lx < -JOYSTICKTHRESHOLD) {
-            offset.x -= 1;
-        }
-        if (offset.x != 0 || offset.y != 0) {
-            dir = SDL_atan2f(offset.y, offset.x) * 180 / SDL_PI_F;
-            float throttle = SDL_sqrtf(offset.x * offset.x + offset.y * offset.y);
-            offset.x /= throttle;
-            offset.y /= throttle;
-        }
-    }
-    return offset;
-}
-
 /* Finds the closest entities within a circle around an entity. Can be configured to search only in a group */
-int Entity::getClosestTarget(std::vector<Entity>& order, std::string group, int entityidx, float entitydir, float range) {
+int Entity::getClosestTarget(const std::vector<Entity>& order, std::string group, int entityidx, float entitydir, float range) {
     inRange = { };
     float closestdist;
     int closest = -1;
@@ -116,17 +95,17 @@ int Entity::getClosestTarget(std::vector<Entity>& order, std::string group, int 
     return closest;
 }
 
-float Entity::getDistance(SDL_FRect target) {
+float Entity::getDistance(SDL_FRect target) const {
     const float xdist = prect.x - target.x;
     const float ydist = prect.y - target.y;
     return SDL_sqrtf(xdist * xdist + ydist * ydist);
 }
 
-float Entity::getDirection(SDL_FRect target) {
+float Entity::getDirection(SDL_FRect target) const {
     return SDL_atan2f(target.y - prect.y, target.x - prect.x);
 }
 
-bool Entity::isColliding(SDL_FRect target) {
+bool Entity::isColliding(SDL_FRect target) const {
     const float SELFTOP = hitbox.y;
     const float SELFBOTTOM = hitbox.y + hitbox.h;
     const float SELFLEFT = hitbox.x;
@@ -139,18 +118,28 @@ bool Entity::isColliding(SDL_FRect target) {
     return SELFTOP < TARGETBOTTOM && SELFBOTTOM > TARGETTOP && SELFRIGHT > TARGETLEFT && SELFLEFT < TARGETRIGHT;
 }
 
-int Entity::getSprite() {
-    if (dir == -90) {
-        return 0;
-    }
-    if (SDL_fabsf(dir) < 90) {
+int Entity::getSprite() const {
+    if (dir == 0) {
         return 1;
     }
-    if (dir == 90) {
-        return 2;
-    }
-    if (SDL_fabsf(dir) > 90) {
+    if (dir == 180) {
         return 3;
     }
+    if (dir > 0) {
+        return 2;
+    }
+    if (dir < 0) {
+        return 0;
+    }
     return 0;
+}
+
+Vector Entity::getChaseVector(Entity target) const {
+    const float APPROACHRANGE = 150.0f;
+    float speedScale = SDL_min(getDistance(target.prect) / APPROACHRANGE, 1); /* Move further objects faster */
+    float angle = getDirection(target.prect);
+    if (speedScale < 0.5) {
+        speedScale = 0;
+    }
+    return getVector(angle, speed * speedScale);
 }

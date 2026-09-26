@@ -13,12 +13,13 @@ class Entity {
         std::vector<int> inRange;
 
     public:
-        Entity(Game& game, std::string name);
+        Entity(const Game& game, std::string name);
 
         int type;
         std::string group;
         int texture = 0;
         std::vector<SDL_Texture *> textures;
+        Vector displacement;
         SDL_FRect prect; /* Physics position */
         SDL_FRect drect; /* Rendering position */
         SDL_FRect hitbox;
@@ -29,14 +30,15 @@ class Entity {
         std::map<std::string, int> effects;
         int health;
 
-        void updateEntity(Coordinate offset, int texture, std::vector<Entity>& order);
+        void updateEntity(Vector offset, int texture);
+        void applyDisplacement(Vector offset, const std::vector<Entity>& order);
         void inflictDamage(int amount);
         void inflictEffect(std::string effect, int duration);
         void highlight(SDL_Renderer *renderer, const Game& game);
-        Coordinate getMoveControls(Game& game, Input& input);
-        int getClosestTarget(std::vector<Entity>& order, std::string group, int playeridx, float entitydir, float range);
-        float getDistance(SDL_FRect target);
-        float getDirection(SDL_FRect target);
-        bool isColliding(SDL_FRect target);
-        int getSprite();
+        int getClosestTarget(const std::vector<Entity>& order, std::string group, int playeridx, float entitydir, float range);
+        float getDistance(SDL_FRect target) const;
+        float getDirection(SDL_FRect target) const;
+        bool isColliding(SDL_FRect target) const;
+        int getSprite() const;
+        Vector getChaseVector(Entity target) const;
 };

@@ -122,16 +122,13 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
 
     /* Process a temporary enemy character */
     static Entity enemy(game, "TEETH");
-    float speedScale = SDL_min(enemy.getDistance(player.prect) / player.range, 1); /* Move further objects faster */
-    float angle = enemy.getDirection(player.prect);
-    if (speedScale < 0.5) {
-        speedScale = 0;
-    }
-    enemy.updateEntity(getMoveOffset(angle, enemy.speed * speedScale * game.delta), 0, entityOrder);
+    enemy.applyDisplacement(enemy.getChaseVector(player) * game.delta, entityOrder);
+    enemy.updateEntity(enemy.displacement, 0);
     render.orderEntity(entityOrder, enemy);
 
     /* Ensure the player is the final processed entity to guarantee its index is known */
-    player.updateEntity(player.getMoveControls(game, input) * player.speed * game.delta, player.getSprite(), entityOrder);
+    player.applyDisplacement(input.getMoveControls(game, player.dir) * player.speed * game.delta, entityOrder);
+    player.updateEntity(player.displacement, player.getSprite());
     int playeridx = render.orderEntity(entityOrder, player);
     int closest = player.getClosestTarget(entityOrder, "npc", playeridx, player.dir, player.range);
 

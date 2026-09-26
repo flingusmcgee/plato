@@ -1,7 +1,7 @@
 #include "Camera.h"
 
 /* Track a position confined to map borders. */
-void Camera::updateCamera(Game& game, SDL_FRect& prect) {
+void Camera::updateCamera(const Game& game, const SDL_FRect& prect) {
     float x = prect.x - game.SCREENWIDTH / 2;
     float y = prect.y - game.SCREENHEIGHT / 2 - prect.h / 2;
 
@@ -33,7 +33,7 @@ void Camera::updateCamera(Game& game, SDL_FRect& prect) {
 }
 
 /* Offsets an object's position to camera origin */
-SDL_FRect Camera::offsetToCamera(SDL_FRect rect) {
+SDL_FRect Camera::offsetToCamera(SDL_FRect rect) const {
     return translate(rect, origin);
 }
 
@@ -44,7 +44,7 @@ void Camera::shakeCamera(int strength, int tick) {
             origin.y -= shakeOffset.y;
             shakeOffset.x = SDL_rand(strength * 2) - strength;
             shakeOffset.y = SDL_rand(strength * 2) - strength;
-            origin = translate(origin, shakeOffset);
+            origin = origin + shakeOffset;
         }
     }
     else {
@@ -52,34 +52,4 @@ void Camera::shakeCamera(int strength, int tick) {
         origin.y -= shakeOffset.y;
         shakeOffset = { 0, 0 };
     }
-}
-
-/* Get the coordinates of the top-left corner required for `SDL_Render`. Inverse of `getPhysicsAnchor` */
-SDL_FRect getRenderAnchor(SDL_FRect rect) {
-    return { rect.x - rect.w / 2, rect.y - rect.h, rect.w, rect.h };
-}
-
-/* Get the coordinates of the bottom-middle required for physics. Inverse of `getRenderAnchor` */
-SDL_FRect getPhysicsAnchor(SDL_FRect rect) {
-    return { rect.x + rect.w / 2, rect.y + rect.h, rect.w, rect.h };
-}
-
-/* Translates a rect's x and y coordinates */
-SDL_FRect translate(SDL_FRect rect, Coordinate offset) {
-    return { rect.x + offset.x, rect.y + offset.y, rect.w, rect.h };
-}
-
-/* Translates a point's x and y coordinates */
-Coordinate translate(Coordinate point, Coordinate offset) {
-    return { point.x + offset.x, point.y + offset.y };
-}
-
-/* Converts a movement vector into a translatable offset value */
-Coordinate getMoveOffset(float angle, float speed) {
-    return { SDL_cosf(angle) * speed, SDL_sinf(angle) * speed };
-}
-
-/* Accepts the render rectangle `drect` of the target */
-bool isInView(SDL_FRect rect, Game& game) {
-    return rect.x > -rect.w && rect.x < game.SCREENWIDTH && rect.y > -rect.h && rect.y < game.SCREENHEIGHT;
 }
