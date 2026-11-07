@@ -1,7 +1,9 @@
 #pragma once
-#include "Game.h"
-#include "Entity.h"
-#include "Asset.h"
+#include "Utility.h"
+
+class Game;
+class Entity;
+class Asset;
 
 class Interface {
     private:
@@ -13,7 +15,7 @@ class Interface {
         TTF_Font *font;
         Text text;
 
-        void createTextBox(SDL_Renderer *renderer, Game& game, Entity entity, int maxWidth);
+        void createTextBox(SDL_Renderer *renderer, Game& game, Entity* entity, int maxWidth);
         void renderTextBox(SDL_Renderer *renderer, const Game& game, float height, float margin);
         void clearText();
 };

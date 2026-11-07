@@ -26,6 +26,7 @@
         "TEETH"
     ],
     "map": {
+        "maxentities": 100,
         "mapwidth": 6,
         "mapheight": 5,
         "tilewidth": 256,
@@ -56,11 +57,11 @@
             "BLANK", "WATER", "WATER", "WATER", "WATER", "SAND"
         ],
         "npc": [
-            "EMPTY", "LOLLI", "EMPTY", "EMPTY", "EMPTY", "EMPTY",
+            "TEETH", "LOLLI", "EMPTY", "EMPTY", "EMPTY", "EMPTY",
             "EMPTY", "EMPTY", "EMPTY", "LOLLI", "EMPTY", "EMPTY",
             "EMPTY", "EMPTY", "LOLLI", "LOLLI", "EMPTY", "EMPTY",
             "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY",
-            "EMPTY", "EMPTY", "EMPTY", "LOLLI", "LOLLI", "EMPTY"
+            "EMPTY", "EMPTY", "EMPTY", "LOLLI", "LOLLI", "TEETH"
         ]
     }
 }

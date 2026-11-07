@@ -1,25 +1,36 @@
 #include "Render.h"
+#include "Game.h"
+#include "Entity.h"
+#include "Camera.h"
 
-/* Render visible tiles and map-bound entities using tileset/spriteset info and origin point. Returns the number of rendered tiles */
-int Render::renderMap(SDL_Renderer *renderer, const Game& game, std::vector<Entity>& order, Vector origin) {
+/* Render visible tiles and initialize map-bound entities using tileset/spriteset info. Returns the number of rendered tiles */
+int Render::renderMap(SDL_Renderer *renderer, Game& game, const Camera& camera) {
     SDL_FRect tile = { 0, 0, (float) game.TILEWIDTH, (float) game.TILEHEIGHT };
     int renderedTiles = 0;
     for (int i = 0; i < game.MAPHEIGHT; ++i) {
         for (int j = 0; j < game.MAPWIDTH; ++j) {
-            SDL_FRect tileOffset = translate(tile, origin);
-            if (isInView(tileOffset, game)) {
+            /* Render map tiles */
+            SDL_FRect tileOffset = camera.offsetToCamera(tile);
+            if (game.isInView(tileOffset)) {
                 SDL_RenderTexture(renderer, game.mapTileList.at(game.MAP[i][j]), NULL, &tileOffset);
                 ++renderedTiles;
-                /* Queue entity processing if applicable */
-                Vector npc;
-                npc.x = getPhysicsAnchor(tile).x;
-                npc.y = getPhysicsAnchor(tile).y;
-                if (game.NPC[i][j] > 0) {
-                    Entity entity(game, game.NPCSET[game.NPC[i][j]]);
-                    entity.updateEntity(npc, 0);
-                    orderEntity(order, entity);
+            }
+
+            /* Queue entity processing if applicable */
+            Vector entitypos;
+            entitypos.x = getPhysicsAnchor(tile).x;
+            entitypos.y = getPhysicsAnchor(tile).y;
+            if (game.NPC[i][j] > 0) {
+                std::string id = std::format("{}{}{}", game.NPCSET[game.NPC[i][j]], entitypos.x, entitypos.y);
+                if (game.existingEntities.size() < game.MAXENTITIES) {
+                    if (!game.existingEntities.contains(id)) {
+                        Entity entity(game.ENTITYTEMPLATES.at(game.NPCSET[game.NPC[i][j]]), entitypos);
+                        entity.updateEntity(camera);
+                        game.existingEntities[id] = entity;
+                    }
                 }
             }
+
             tile.x += game.TILEWIDTH;
         }
         tile.x = 0;
@@ -30,20 +41,20 @@ int Render::renderMap(SDL_Renderer *renderer, const Game& game, std::vector<Enti
 }
 
 /* Aligns entities to a pseudo z-index in preparation of rendering. Returns the index of the newly added entity */
-int Render::orderEntity(std::vector<Entity>& order, Entity& entity) {
+int Render::orderEntity(std::vector<Entity*>& order, Entity* entity) {
     int idx = 0;
     if (order.empty()) {
         order.push_back(entity);
     }
     else {
         for (auto it = order.begin(); it != order.end(); ++it) {
-            if (entity.prect.y <= (*it).prect.y) {
+            if (entity->prect.y <= (*it)->prect.y) {
                 order.insert(it, entity);
                 break;
             }
             ++idx;
         }
-        if (entity.prect.y > order.back().prect.y) {
+        if (entity->prect.y > order.back()->prect.y) {
             order.push_back(entity);
         }
     }

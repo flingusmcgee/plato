@@ -9,6 +9,7 @@
 #include "src/Interface.h"
 #include "src/Reader.h"
 #include "src/Render.h"
+#include "src/Utility.h"
 
 static SDL_Window   *window   = NULL;
 static SDL_Renderer *renderer = NULL;
@@ -16,8 +17,6 @@ static Game game;
 static Audio audio;
 static Input input;
 static Interface interface;
-
-static std::vector<Entity> entityOrder;
 
 /* This function runs once at startup. */
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
@@ -100,56 +99,58 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     game.delta = (float) (game.ticks - lastframe) / NSCOEFFICIENT;
     lastframe = game.ticks;
 
-    entityOrder = { };
+    game.entityOrder = { };
     input.updateJoysticks();
 
     /* Define the player and the camera */
-    static Entity player(game, "TIMMY");
+    const Vector playerSpawn = { game.SCREENWIDTH / 2, game.SCREENHEIGHT / 2 };
+    static Entity player(game.ENTITYTEMPLATES["TIMMY"], playerSpawn);
     static Camera cam;
     cam.updateCamera(game, player.prect);
 
-    if (input.isKeyDown(SDL_SCANCODE_E, false)) {
-        cam.reftick = game.ticks;
-    }
-    if (input.isKeyDown(SDL_SCANCODE_E, true)) {
-        cam.shakeCamera(10, game.ticks);
-    }
-    /* x * cos(angle) - y * sin(angle), x * sin(angle) + y * cos(angle) */
-
-    /* Render the map tiles and process map-bound entities */
+    /* Render the map tiles and initialize map-bound entities */
     static Render render;
-    int renderedTiles = render.renderMap(renderer, game, entityOrder, cam.origin);
+    int renderedTiles = render.renderMap(renderer, game, cam);
 
-    /* Process a temporary enemy character */
-    static Entity enemy(game, "TEETH");
-    enemy.applyDisplacement(enemy.getChaseVector(player) * game.delta, entityOrder);
-    enemy.updateEntity(enemy.displacement, 0);
-    render.orderEntity(entityOrder, enemy);
+    /* Process all entity characters */
+    for (auto& [id, entity] : game.existingEntities) {
+        if (entity.group == "enemy") {
+            entity.applyDisplacement(entity.getChaseVector(player) * game.delta, game.entityOrder);
+            entity.updateEntity(cam);
+        }
+        entity.setRenderPosition(cam);
+        if (game.isInView(entity.drect)) {
+            render.orderEntity(game.entityOrder, &entity);
+        }
+    }
 
     /* Ensure the player is the final processed entity to guarantee its index is known */
-    player.applyDisplacement(input.getMoveControls(game, player.dir) * player.speed * game.delta, entityOrder);
-    player.updateEntity(player.displacement, player.getSprite());
-    int playeridx = render.orderEntity(entityOrder, player);
-    int closest = player.getClosestTarget(entityOrder, "npc", playeridx, player.dir, player.range);
+    player.applyDisplacement(input.getMoveControls(game) * player.speed * game.delta, game.entityOrder);
+    player.setSprite();
+    player.updateEntity(cam);
+    int playeridx = render.orderEntity(game.entityOrder, &player);
+    int closestidx = player.getClosestTarget(game.entityOrder, "npc", playeridx, player.dir, player.range);
 
     /* Render the entities */
-    for (Entity& entity : entityOrder) {
-        entity.drect = cam.offsetToCamera(getRenderAnchor(entity.prect));
-        if (isInView(entity.drect, game)) {
-            SDL_RenderTexture(renderer, entity.textures.at(entity.texture), NULL, &entity.drect);
+    for (Entity* entity : game.entityOrder) {
+        if (game.isInView(entity->drect)) {
+            SDL_RenderTexture(renderer, entity->textures.at(entity->texture), NULL, &entity->drect);
         }
     }
 
     /* Interactivity and narration */
     const float TEXTBOXHEIGHT = 120.0f;
     const float TEXTBOXMARGIN = 10.0f;
-    if (closest != -1 && !game.DIALOGUE[entityOrder[closest].type].empty()) {
-        entityOrder[closest].highlight(renderer, game);
-        if (input.isKeyDown(SDL_SCANCODE_Z, false) || input.isButtonDown(SDL_GAMEPAD_BUTTON_SOUTH, false)) {
-            interface.createTextBox(renderer, game, entityOrder[closest], game.SCREENWIDTH - TEXTBOXMARGIN * 3);
-        }
-        if (game.interacting) {
-            interface.renderTextBox(renderer, game, TEXTBOXHEIGHT, TEXTBOXMARGIN);
+    if (closestidx != -1) {
+        Entity* closest = game.entityOrder[closestidx];
+        if (!game.DIALOGUE[closest->type].empty()) {
+            game.highlight(renderer, closest->drect);
+            if (input.isKeyDown(SDL_SCANCODE_Z, false) || input.isButtonDown(SDL_GAMEPAD_BUTTON_SOUTH, false)) {
+                interface.createTextBox(renderer, game, closest, game.SCREENWIDTH - TEXTBOXMARGIN * 3);
+            }
+            if (game.interacting) {
+                interface.renderTextBox(renderer, game, TEXTBOXHEIGHT, TEXTBOXMARGIN);
+            }
         }
     }
 
@@ -168,16 +169,16 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     /* Show boxes */
     if (game.SHOWBOXES) {
         render.renderCircle(renderer, cam.offsetToCamera(player.prect).x, cam.offsetToCamera(player.prect).y, player.range);
-        for (Entity& entity : entityOrder) {
-            render.renderBigPoint(renderer, cam.offsetToCamera(entity.prect).x, cam.offsetToCamera(entity.prect).y, 6);
-            SDL_FRect hitbox { cam.offsetToCamera(entity.hitbox).x, cam.offsetToCamera(entity.hitbox).y, entity.hitbox.w, entity.hitbox.h };
-            if (entity.hitboxLayer == 1) {
+        for (Entity* entity : game.entityOrder) {
+            render.renderBigPoint(renderer, cam.offsetToCamera(entity->prect).x, cam.offsetToCamera(entity->prect).y, 6);
+            SDL_FRect hitbox { cam.offsetToCamera(entity->hitbox).x, cam.offsetToCamera(entity->hitbox).y, entity->hitbox.w, entity->hitbox.h };
+            if (entity->hitboxLayer == 1) {
                 SDL_SetRenderDrawColor(renderer, 0, 255, 255, SDL_ALPHA_OPAQUE);
             }
-            if (entity.hitboxLayer == 2) {
+            if (entity->hitboxLayer == 2) {
                 SDL_SetRenderDrawColor(renderer, 255, 0, 255, SDL_ALPHA_OPAQUE);
             }
-            if (entity.hitboxLayer == 3) {
+            if (entity->hitboxLayer == 3) {
                 SDL_SetRenderDrawColor(renderer, 255, 255, 0, SDL_ALPHA_OPAQUE);
             }
             SDL_RenderRect(renderer, &hitbox);
@@ -189,14 +190,15 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_RenderDebugTextFormat(renderer, 10, 10, "fps: %.1f", (game.delta) ? 1.0f / game.delta : 0);
     SDL_RenderDebugTextFormat(renderer, 10, 20, "x: %.1f", player.prect.x);
     SDL_RenderDebugTextFormat(renderer, 10, 30, "y: %.1f", player.prect.y);
-    SDL_RenderDebugTextFormat(renderer, 10, 40, "facing: %.1f", player.dir);
+    SDL_RenderDebugTextFormat(renderer, 10, 40, "facing: %.1f", player.dir * 180 / SDL_PI_F);
     SDL_RenderDebugTextFormat(renderer, 10, 50, "cam x: %.1f", cam.origin.x);
     SDL_RenderDebugTextFormat(renderer, 10, 60, "cam y: %.1f", cam.origin.y);
-    SDL_RenderDebugTextFormat(renderer, 10, 70, "rendered tiles / entities: %d / %d", renderedTiles, entityOrder.size());
-    SDL_RenderDebugTextFormat(renderer, 10, 80, "input: %s", input.gamepad ? SDL_GetGamepadName(input.gamepad) : "keyboard");
+    SDL_RenderDebugTextFormat(renderer, 10, 70, "rendered tiles / entities: %d / %d", renderedTiles, game.entityOrder.size());
+    SDL_RenderDebugTextFormat(renderer, 10, 80, "total entities: %d", game.existingEntities.size() + 1);
+    SDL_RenderDebugTextFormat(renderer, 10, 90, "input: %s", input.gamepad ? SDL_GetGamepadName(input.gamepad) : "keyboard");
 
-    for (int i = 0; i < entityOrder.size(); ++i) {
-        SDL_RenderDebugTextFormat(renderer, 10, game.SCREENHEIGHT - (entityOrder.size() - i) * 10, "%s %.1f %.1f", game.NPCSET.at(entityOrder[i].type).c_str(), entityOrder[i].prect.x, entityOrder[i].prect.y);
+    for (int i = 0; i < game.entityOrder.size(); ++i) {
+        SDL_RenderDebugTextFormat(renderer, 10, game.SCREENHEIGHT - (game.entityOrder.size() - i) * 10, "%s %.1f %.1f", game.NPCSET.at(game.entityOrder[i]->type).c_str(), game.entityOrder[i]->prect.x, game.entityOrder[i]->prect.y);
     }
 
     /* Show time! */

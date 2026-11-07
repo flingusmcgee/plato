@@ -1,4 +1,5 @@
 #include "Camera.h"
+#include "Game.h"
 
 /* Track a position confined to map borders. */
 void Camera::updateCamera(const Game& game, const SDL_FRect& prect) {

@@ -1,4 +1,6 @@
 #include "Reader.h"
+#include "Game.h"
+#include "Entity.h"
 #include <json/json.h>
 #include <iostream>
 #include <fstream>
@@ -22,18 +24,19 @@ Game Reader::readGameData() {
         external.AUDIOPATHS.push_back(string.asString());
     }
     /* Screen */
-    external.SCREENWIDTH = data["game"]["screenwidth"].asInt();
-    external.SCREENHEIGHT = data["game"]["screenheight"].asInt();
+    external.SCREENWIDTH = data["game"]["screenwidth"].asFloat();
+    external.SCREENHEIGHT = data["game"]["screenheight"].asFloat();
     external.FONTPATH = data["game"]["font"]["path"].asString();
-    external.FONTSIZE = data["game"]["font"]["size"].asInt();
-    external.FONTSPEED = data["game"]["font"]["speed"].asInt();
-    external.ANIMATIONSPEED = data["game"]["animation"]["speed"].asInt();
+    external.FONTSIZE = data["game"]["font"]["size"].asFloat();
+    external.FONTSPEED = data["game"]["font"]["speed"].asFloat();
+    external.ANIMATIONSPEED = data["game"]["animation"]["speed"].asFloat();
     external.SHOWBOXES = data["game"]["showboxes"].asBool();
     /* Map */
-    external.TILEWIDTH = data["map"]["tilewidth"].asInt();
-    external.TILEHEIGHT = data["map"]["tileheight"].asInt();
+    external.MAXENTITIES = data["map"]["maxentities"].asInt();
     external.MAPWIDTH = data["map"]["mapwidth"].asInt();
     external.MAPHEIGHT = data["map"]["mapheight"].asInt();
+    external.TILEWIDTH = data["map"]["tilewidth"].asInt();
+    external.TILEHEIGHT = data["map"]["tileheight"].asInt();
 
     /* Obtain tileset identifiers */
     std::map<std::string, int> tileset = { };
@@ -101,14 +104,6 @@ Game Reader::readGameData() {
             entityTemplate.rect = { 0, 0, entity["texture"]["width"].asFloat(), entity["texture"]["height"].asFloat() };
             entityTemplate.hitbox = { 0, 0, entity["hitbox"]["width"].asFloat(), entity["hitbox"]["height"].asFloat() };
             entityTemplate.hitboxLayer = entity["hitbox"]["layer"].asInt();
-            /*
-            if (entity["hitbox"]["type"].asString() == "solid") {
-                entityTemplate.hitboxType = 1;
-            }
-            else {
-                entityTemplate.hitboxType = 0;
-            }
-            */
             entityTemplate.speed = entity["speed"].asFloat();
             entityTemplate.range = entity["range"].asInt();
         }
@@ -134,12 +129,12 @@ Game Reader::readGameData() {
     }
 
     std::printf("\n>> SCREEN\n");
-    std::printf("SCREENWIDTH: %d\n", external.SCREENWIDTH);
-    std::printf("SCREENHEIGHT: %d\n", external.SCREENHEIGHT);
+    std::printf("SCREENWIDTH: %.1f\n", external.SCREENWIDTH);
+    std::printf("SCREENHEIGHT: %.1f\n", external.SCREENHEIGHT);
     std::printf("FONTPATH: %s\n", external.FONTPATH.c_str());
-    std::printf("FONTSIZE: %d\n", external.FONTSIZE);
-    std::printf("FONTSPEED: %d\n", external.FONTSPEED);
-    std::printf("ANIMATIONSPEED: %d\n", external.ANIMATIONSPEED);
+    std::printf("FONTSIZE: %.1f\n", external.FONTSIZE);
+    std::printf("FONTSPEED: %.1f\n", external.FONTSPEED);
+    std::printf("ANIMATIONSPEED: %.1f\n", external.ANIMATIONSPEED);
     std::printf("SHOWBOXES: %s\n", external.SHOWBOXES ? "TRUE" : "FALSE");
 
     std::printf("\n>> ENTITIES\n");
@@ -162,10 +157,11 @@ Game Reader::readGameData() {
     }
 
     std::printf("\n>> MAP\n");
-    std::printf("TILEWIDTH: %d\n", external.TILEWIDTH);
-    std::printf("TILEHEIGHT: %d\n", external.TILEHEIGHT);
+    std::printf("MAXENTITIES: %d\n", external.MAXENTITIES);
     std::printf("MAPWIDTH: %d\n", external.MAPWIDTH);
     std::printf("MAPHEIGHT: %d\n", external.MAPHEIGHT);
+    std::printf("TILEWIDTH: %d\n", external.TILEWIDTH);
+    std::printf("TILEHEIGHT: %d\n", external.TILEHEIGHT);
 
     std::printf("\n>> LAYOUT\n");
     for (auto [k, v] : tileset) {

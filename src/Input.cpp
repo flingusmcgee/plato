@@ -1,4 +1,5 @@
 #include "Input.h"
+#include "Game.h"
 
 void Input::initKeyboard() {
     if (keyJustDown.empty()) {
@@ -63,7 +64,7 @@ bool Input::isButtonDown(SDL_GamepadButton button, bool hold) {
 }
 
 /* Get a movement vector and set direction from user input */
-Vector Input::getMoveControls(const Game& game, float& dir) {
+Vector Input::getMoveControls(const Game& game) {
     const int JOYSTICKTHRESHOLD = 10000;
     bool up    = isKeyDown(SDL_SCANCODE_W, true) || isKeyDown(SDL_SCANCODE_UP, true);
     bool right = isKeyDown(SDL_SCANCODE_D, true) || isKeyDown(SDL_SCANCODE_RIGHT, true);
@@ -88,7 +89,6 @@ Vector Input::getMoveControls(const Game& game, float& dir) {
             float throttle = SDL_sqrtf(offset.x * offset.x + offset.y * offset.y);
             offset.x /= throttle;
             offset.y /= throttle;
-            dir = SDL_atan2f(offset.y, offset.x) * 180 / SDL_PI_F;
         }
     }
     return offset;

@@ -1,93 +1,113 @@
 #include "Entity.h"
+#include "Camera.h"
 
-Entity::Entity(const Game& game, std::string name) {
-    EntityTemplate entityTemplate = game.ENTITYTEMPLATES.at(name);
-    type     = entityTemplate.type;
-    group    = entityTemplate.group;
-    textures = entityTemplate.textures;
-    prect    = entityTemplate.rect;
-    hitbox   = entityTemplate.hitbox;
-    hitboxLayer = entityTemplate.hitboxLayer;
-    speed    = entityTemplate.speed;
-    range    = entityTemplate.range;
+Entity::Entity(const EntityTemplate& base, Vector spawnpos) {
+    type     = base.type;
+    group    = base.group;
+    textures = base.textures;
+    prect    = base.rect;
+    hitbox   = base.hitbox;
+    hitboxLayer = base.hitboxLayer;
+    speed    = base.speed;
+    range    = base.range;
 
-    if (type == 1) {
-        prect.x = game.SCREENWIDTH / 2;
-        prect.y = game.SCREENHEIGHT / 2 + prect.h / 2;
-    }
+    prect = translate(prect, spawnpos);
 }
 
 /* Manages movement and animations */
-void Entity::updateEntity(Vector offset, int texture) {
-    hitbox.x = offset.x;
-    hitbox.y = offset.y;
-    prect.x = getPhysicsAnchor(hitbox).x;
-    prect.y = getPhysicsAnchor(hitbox).y;
-    this->texture = texture;
+void Entity::updateEntity(const Camera& camera) {
+    prect = translate(prect, displacement);
+    hitbox.x = prect.x - hitbox.w / 2;
+    hitbox.y = prect.y - hitbox.h;
+    displacement = { 0, 0 };
+    setRenderPosition(camera);
 }
 
 /* Tests an offset against collisions and applies it to displacement */
-void Entity::applyDisplacement(Vector offset, const std::vector<Entity>& order) {
-    SDL_FRect originHitbox = hitbox;
-
-    hitbox.x = prect.x - hitbox.w / 2 + offset.x;
-    for (Entity entity : order) {
-        if (entity.hitboxLayer <= hitboxLayer) {
-            if (isColliding(entity.hitbox)) {
-                hitbox.x = originHitbox.x;
-                break;
+void Entity::applyDisplacement(Vector offset, const std::vector<Entity*> order) {
+    if (offset.x != 0 || offset.y != 0) {
+        SDL_FRect originalHitbox = hitbox;
+        displacement = displacement + offset;
+        
+        hitbox.x = prect.x - hitbox.w / 2 + displacement.x;
+        for (Entity* entity : order) {
+            if (this == entity) {
+                continue;
+            }
+            if (entity->hitboxLayer <= hitboxLayer) {
+                if (isColliding(entity->hitbox)) {
+                    displacement.x -= offset.x;
+                    hitbox.x = originalHitbox.x;
+                    break;
+                }
             }
         }
-    }
-    hitbox.y = prect.y - hitbox.h + offset.y;
-    for (Entity entity : order) {
-        if (entity.hitboxLayer <= hitboxLayer) {
-            if (isColliding(entity.hitbox)) {
-                hitbox.y = originHitbox.y;
-                break;
+        hitbox.y = prect.y - hitbox.h + displacement.y;
+        for (Entity* entity : order) {
+            if (this == entity) {
+                continue;
+            }
+            if (entity->hitboxLayer <= hitboxLayer) {
+                if (isColliding(entity->hitbox)) {
+                    displacement.y -= offset.y;
+                    hitbox.y = originalHitbox.y;
+                    break;
+                }
             }
         }
+        
+        dir = SDL_atan2f(offset.y, offset.x);
+        hitbox = originalHitbox;
     }
-
-    displacement = { hitbox.x, hitbox.y };
-    hitbox = originHitbox;
 }
 
-void Entity::highlight(SDL_Renderer *renderer, const Game& game) {
-    const float DISTANCE = 10;
-    SDL_FRect highlighter = drect;
-    highlighter.y += SDL_sinf((float) game.ticks / NSCOEFFICIENT * game.ANIMATIONSPEED) * DISTANCE;
-    SDL_RenderTexture(renderer, game.iconList[0], NULL, &highlighter);
+void Entity::setRenderPosition(const Camera& camera) {
+    drect = camera.offsetToCamera(getRenderAnchor(prect));
 }
 
-/* Finds the closest entities within a circle around an entity. Can be configured to search only in a group */
-int Entity::getClosestTarget(const std::vector<Entity>& order, std::string group, int entityidx, float entitydir, float range) {
+void Entity::setSprite() {
+    if (dir == 0) {
+        texture = 1; /* East */
+    }
+    else if (dir == SDL_PI_F) {
+        texture = 3; /* West */
+    }
+    else if (dir > 0) {
+        texture = 2; /* South */
+    }
+    else {
+        texture = 0; /* North */
+    }
+}
+
+/* Finds the entities within a circle around an entity and returns the closest. Can be configured to search only in a group */
+int Entity::getClosestTarget(const std::vector<Entity*> order, std::string group, int currentidx, float currentdir, float range) {
     inRange = { };
-    float closestdist;
+    float closestDist;
     int closest = -1;
-    int lastidx = entityidx;
-    while (lastidx > 0 && order[entityidx].prect.y - order[lastidx - 1].prect.y <= range) {
+    int lastidx = currentidx;
+    while (lastidx > 0 && order[currentidx]->prect.y - order[lastidx - 1]->prect.y <= range) {
         --lastidx;
     }
     for (int i = lastidx; i < order.size(); ++i) {
-        if (SDL_fabsf(order[entityidx].prect.y - order[i].prect.y) > range) {
+        if (SDL_fabsf(order[currentidx]->prect.y - order[i]->prect.y) > range) {
             break;
         }
-        if (order[i].group != group && !group.empty()) {
+        if (order[i]->group != group && !group.empty()) {
             continue;
         }
-        if (i == entityidx) {
+        if (i == currentidx) {
             continue;
         }
-        float dist = order[entityidx].getDistance(order[i].prect);
-        float dir = order[entityidx].getDirection(order[i].prect) * 180 / SDL_PI_F;
-        if (dist <= range) {
+        float distToTarget = order[currentidx]->getDistance(order[i]->prect);
+        float dirToTarget = order[currentidx]->getDirection(order[i]->prect);
+        if (distToTarget <= range) {
             inRange.push_back(i);
-            float deltadir = SDL_fabs(dir - entitydir);
-            const float CONE = 40;
-            if (SDL_min(deltadir, 360 - deltadir) < CONE && (dist < closestdist || closest == -1)) {
+            float dirDifference = SDL_fabs(dirToTarget - currentdir);
+            const float SEARCHCONE = SDL_PI_F / 4;
+            if (SDL_min(dirDifference, 2 * SDL_PI_F - dirDifference) < SEARCHCONE && (distToTarget < closestDist || closest == -1)) {
                 closest = i;
-                closestdist = dist;
+                closestDist = distToTarget;
             }
         }
     }
@@ -116,22 +136,6 @@ bool Entity::isColliding(SDL_FRect target) const {
     const float TARGETRIGHT = target.x + target.w;
 
     return SELFTOP < TARGETBOTTOM && SELFBOTTOM > TARGETTOP && SELFRIGHT > TARGETLEFT && SELFLEFT < TARGETRIGHT;
-}
-
-int Entity::getSprite() const {
-    if (dir == 0) {
-        return 1;
-    }
-    if (dir == 180) {
-        return 3;
-    }
-    if (dir > 0) {
-        return 2;
-    }
-    if (dir < 0) {
-        return 0;
-    }
-    return 0;
 }
 
 Vector Entity::getChaseVector(Entity target) const {

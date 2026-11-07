@@ -1,6 +1,7 @@
 #pragma once
-#include "Game.h"
-#include "Input.h"
+#include "Utility.h"
+
+class Game;
 
 class Camera {
     public:

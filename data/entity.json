@@ -16,7 +16,7 @@
         },
         "hitbox": {
             "width": 50,
-            "height": 20,
+            "height": 30,
             "layer": 2
         },
         "speed": 500.0,
@@ -49,7 +49,7 @@
         },
         "hitbox": {
             "width": 80,
-            "height": 20,
+            "height": 40,
             "layer": 3
         },
         "speed": 400.0

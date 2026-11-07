@@ -1,4 +1,5 @@
 #include "Game.h"
+#include "Entity.h"
 
 /* Initialize game data using `reader.cpp` */
 void Game::loadGameData(const Game& external) {
@@ -17,10 +18,11 @@ void Game::loadGameData(const Game& external) {
     /* Entities */
     ENTITYTEMPLATES = external.ENTITYTEMPLATES;
     /* Map */
-    TILEWIDTH    = external.TILEWIDTH;
-    TILEHEIGHT   = external.TILEHEIGHT;
+    MAXENTITIES  = external.MAXENTITIES;
     MAPWIDTH     = external.MAPWIDTH;
     MAPHEIGHT    = external.MAPHEIGHT;
+    TILEWIDTH    = external.TILEWIDTH;
+    TILEHEIGHT   = external.TILEHEIGHT;
     MAPSET       = external.MAPSET;
     MAP          = external.MAP;
     NPCSET       = external.NPCSET;
@@ -28,27 +30,14 @@ void Game::loadGameData(const Game& external) {
     DIALOGUE     = external.DIALOGUE;
 }
 
-/* Get the coordinates of the top-left corner required for `SDL_Render`. Inverse of `getPhysicsAnchor` */
-SDL_FRect getRenderAnchor(SDL_FRect rect) {
-    return { rect.x - rect.w / 2, rect.y - rect.h, rect.w, rect.h };
-}
-
-/* Get the coordinates of the bottom-middle required for physics. Inverse of `getRenderAnchor` */
-SDL_FRect getPhysicsAnchor(SDL_FRect rect) {
-    return { rect.x + rect.w / 2, rect.y + rect.h, rect.w, rect.h };
-}
-
-/* Translates a rect's x and y coordinates */
-SDL_FRect translate(SDL_FRect rect, Vector offset) {
-    return { rect.x + offset.x, rect.y + offset.y, rect.w, rect.h };
-}
-
-/* Converts a movement vector into a translatable offset value */
-Vector getVector(float angle, float magnitude) {
-    return { SDL_cosf(angle) * magnitude, SDL_sinf(angle) * magnitude };
-}
-
 /* Accepts the render rectangle `drect` of the target */
-bool isInView(SDL_FRect rect, const Game& game) {
-    return rect.x > -rect.w && rect.x < game.SCREENWIDTH && rect.y > -rect.h && rect.y < game.SCREENHEIGHT;
+bool Game::isInView(SDL_FRect rect) const {
+    return rect.x > -rect.w && rect.x < SCREENWIDTH && rect.y > -rect.h && rect.y < SCREENHEIGHT;
+}
+
+void Game::highlight(SDL_Renderer *renderer, SDL_FRect drect) {
+    const float DISTANCE = 10;
+    SDL_FRect highlighter = drect;
+    highlighter.y += SDL_sinf((float) ticks / NSCOEFFICIENT * ANIMATIONSPEED) * DISTANCE;
+    SDL_RenderTexture(renderer, iconList[0], NULL, &highlighter);
 }
