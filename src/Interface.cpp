@@ -1,7 +1,10 @@
 #include "Interface.h"
+#include "Game.h"
+#include "Entity.h"
+#include "Asset.h"
 
 /* Creates text for an entity and toggles interaction boolean */
-void Interface::createTextBox(SDL_Renderer *renderer, Game& game, Entity entity, int maxWidth) {
+void Interface::createTextBox(SDL_Renderer *renderer, Game& game, Entity* entity, int maxWidth) {
     if (!game.interacting) {
         game.interacting = true;
         progress = 0;
@@ -9,9 +12,9 @@ void Interface::createTextBox(SDL_Renderer *renderer, Game& game, Entity entity,
     }
     else if (progress < 1) {
         progress = 1;
-        line = text.data.size();
+        line = text.data.size() - 1;
     }
-    else if (page < game.DIALOGUE[entity.type].size() - 1) {
+    else if (page < game.DIALOGUE[entity->type].size() - 1) {
         ++page;
         progress = 0;
         line = 0;
@@ -22,7 +25,7 @@ void Interface::createTextBox(SDL_Renderer *renderer, Game& game, Entity entity,
     }
     if (game.interacting && progress < 1) {
         Asset asset;
-        std::string textdata = game.DIALOGUE[entity.type][page];
+        std::string textdata = game.DIALOGUE[entity->type][page];
         for (SDL_Texture *bits : text.texture) {
             SDL_DestroyTexture(bits);
         }
@@ -38,7 +41,7 @@ void Interface::renderTextBox(SDL_Renderer *renderer, const Game& game, float he
     SDL_FRect textrect = { margin * 2, game.SCREENHEIGHT - height, 0, text.h };
 
     if (progress < 1) {
-        progress = SDL_min((float) (game.ticks - text.reftick) / (game.FONTSPEED * text.data[line].length()), 1);
+        progress = SDL_min((float) (game.ticks - text.reftick) / NSCOEFFICIENT / text.data[line].length() * game.FONTSPEED, 1);
     }
     else if (line < text.data.size() - 1) {
         ++line;

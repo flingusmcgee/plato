@@ -12,8 +12,12 @@
         "font": {
             "path": "assets/Barriecito-Regular.ttf",
             "size": 30,
-            "speed": 20
-        }
+            "speed": 40
+        },
+        "animation": {
+            "speed": 12
+        },
+        "showboxes": true
     },
     "entityid": [
         "EMPTY",
@@ -22,6 +26,7 @@
         "TEETH"
     ],
     "map": {
+        "maxentities": 100,
         "mapwidth": 6,
         "mapheight": 5,
         "tilewidth": 256,
@@ -52,11 +57,11 @@
             "BLANK", "WATER", "WATER", "WATER", "WATER", "SAND"
         ],
         "npc": [
-            "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY",
+            "TEETH", "LOLLI", "EMPTY", "EMPTY", "EMPTY", "EMPTY",
             "EMPTY", "EMPTY", "EMPTY", "LOLLI", "EMPTY", "EMPTY",
             "EMPTY", "EMPTY", "LOLLI", "LOLLI", "EMPTY", "EMPTY",
             "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY", "EMPTY",
-            "EMPTY", "EMPTY", "EMPTY", "LOLLI", "LOLLI", "EMPTY"
+            "EMPTY", "EMPTY", "EMPTY", "LOLLI", "LOLLI", "TEETH"
         ]
     }
 }

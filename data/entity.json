@@ -16,11 +16,11 @@
         },
         "hitbox": {
             "width": 50,
-            "height": 50
+            "height": 30,
+            "layer": 2
         },
-        "speed": 1.0,
-        "range": 150,
-        "breadth": 75
+        "speed": 500.0,
+        "range": 150
     },
     "LOLLI": {
         "group": "npc",
@@ -32,8 +32,9 @@
             "height": 256
         },
         "hitbox": {
-            "width": 0,
-            "height": 0
+            "width": 10,
+            "height": 10,
+            "layer": 1
         },
         "speed": 0
     },
@@ -47,9 +48,10 @@
             "height": 256
         },
         "hitbox": {
-            "width": 50,
-            "height": 50
+            "width": 80,
+            "height": 40,
+            "layer": 3
         },
-        "speed": 0.7
+        "speed": 400.0
     }
 }

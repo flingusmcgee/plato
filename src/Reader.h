@@ -1,5 +1,8 @@
 #pragma once
-#include "Game.h"
+#include "Utility.h"
+
+class EntityTemplate;
+class Game;
 
 class Reader {
     public:

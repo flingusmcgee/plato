@@ -1,4 +1,5 @@
 #include "Input.h"
+#include "Game.h"
 
 void Input::initKeyboard() {
     if (keyJustDown.empty()) {
@@ -60,4 +61,35 @@ bool Input::isButtonDown(SDL_GamepadButton button, bool hold) {
         }
     }
     return output;
+}
+
+/* Get a movement vector and set direction from user input */
+Vector Input::getMoveControls(const Game& game) {
+    const int JOYSTICKTHRESHOLD = 10000;
+    bool up    = isKeyDown(SDL_SCANCODE_W, true) || isKeyDown(SDL_SCANCODE_UP, true);
+    bool right = isKeyDown(SDL_SCANCODE_D, true) || isKeyDown(SDL_SCANCODE_RIGHT, true);
+    bool down  = isKeyDown(SDL_SCANCODE_S, true) || isKeyDown(SDL_SCANCODE_DOWN, true);
+    bool left  = isKeyDown(SDL_SCANCODE_A, true) || isKeyDown(SDL_SCANCODE_LEFT, true);
+
+    Vector offset { 0, 0 };
+    if (!game.interacting) {
+        if (up || ly < -JOYSTICKTHRESHOLD) {
+            offset.y -= 1;
+        }
+        if (right || lx > JOYSTICKTHRESHOLD) {
+            offset.x += 1;
+        }
+        if (down || ly > JOYSTICKTHRESHOLD) {
+            offset.y += 1;
+        }
+        if (left || lx < -JOYSTICKTHRESHOLD) {
+            offset.x -= 1;
+        }
+        if (offset.x != 0 || offset.y != 0) {
+            float throttle = SDL_sqrtf(offset.x * offset.x + offset.y * offset.y);
+            offset.x /= throttle;
+            offset.y /= throttle;
+        }
+    }
+    return offset;
 }
