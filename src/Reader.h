@@ -6,5 +6,5 @@ class Game;
 
 class Reader {
     public:
-        Game readGameData();
+        bool readGameData(Game& game);
 };

@@ -24,12 +24,17 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
 
     /* Initialize with external data */
     Reader reader;
-    game.loadGameData(reader.readGameData());
+    if (!reader.readGameData(game)) {
+        SDL_Log("Couldn't load game data: %s", SDL_GetError());
+        return SDL_APP_FAILURE;
+    }
 
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD)) {
         SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
         return SDL_APP_FAILURE;
     }
+
+    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "OPENGL, VULKAN");
 
     if (!SDL_CreateWindowAndRenderer("Plato", game.SCREENWIDTH, game.SCREENHEIGHT, SDL_WINDOW_RESIZABLE, &window, &renderer)) {
         SDL_Log("Couldn't create window/renderer: %s", SDL_GetError());
@@ -193,8 +198,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_RenderDebugTextFormat(renderer, 10, 40, "facing: %.1f", player.dir * 180 / SDL_PI_F);
     SDL_RenderDebugTextFormat(renderer, 10, 50, "cam x: %.1f", cam.origin.x);
     SDL_RenderDebugTextFormat(renderer, 10, 60, "cam y: %.1f", cam.origin.y);
-    SDL_RenderDebugTextFormat(renderer, 10, 70, "rendered tiles / entities: %d / %d", renderedTiles, game.entityOrder.size());
-    SDL_RenderDebugTextFormat(renderer, 10, 80, "total entities: %d", game.existingEntities.size() + 1);
+    SDL_RenderDebugTextFormat(renderer, 10, 70, "rendered tiles / entities: %d / %zu", renderedTiles, game.entityOrder.size());
+    SDL_RenderDebugTextFormat(renderer, 10, 80, "total entities: %zu", game.existingEntities.size() + 1);
     SDL_RenderDebugTextFormat(renderer, 10, 90, "input: %s", input.gamepad ? SDL_GetGamepadName(input.gamepad) : "keyboard");
 
     for (int i = 0; i < game.entityOrder.size(); ++i) {

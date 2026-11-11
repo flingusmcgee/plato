@@ -5,8 +5,11 @@
             "includePath": [
                 "${default}",
                 "C:\\Program Files\\SDL3\\x86_64-w64-mingw32\\include",
+                "C:\\Program Files\\SDL3\\aarch64-w64-mingw32\\include",
                 "C:\\Program Files\\SDL3_image\\x86_64-w64-mingw32\\include",
+                "C:\\Program Files\\SDL3_image\\aarch64-w64-mingw32\\include",
                 "C:\\Program Files\\SDL3_ttf\\x86_64-w64-mingw32\\include",
+                "C:\\Program Files\\SDL3_ttf\\aarch64-w64-mingw32\\include",
                 "C:\\Program Files\\jsoncpp\\include"
             ],
             "defines": [
@@ -14,10 +17,10 @@
                 "UNICODE",
                 "_UNICODE"
             ],
-            "compilerPath": "C:\\msys64\\ucrt64\\bin\\gcc.exe",
+            "compilerPath": "C:\\msys64\\clangarm64\\bin\\clang++.exe",
             "cStandard": "c23",
             "cppStandard": "gnu++26",
-            "intelliSenseMode": "windows-gcc-x64"
+            "intelliSenseMode": "windows-clang-arm64"
         }
     ],
     "version": 4

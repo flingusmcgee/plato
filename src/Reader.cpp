@@ -5,53 +5,68 @@
 #include <iostream>
 #include <fstream>
 
+#if defined(__x86_64__) || defined(_M_X64)
+    #define architecture "x86_64"
+#elif defined(__aarch64__) || defined(_M_ARM64)
+    #define architecture "ARM64"
+#else
+    #define architecture "UNKNOWN"
+#endif
+
 /* Access external memory and confirm initialization */
-Game Reader::readGameData() {
-    std::ifstream file("data/data.json", std::ifstream::binary);
+bool Reader::readGameData(Game& game) {
+    const std::string PATHBASE = "../../";
+
+    std::printf(">> ARCHITECTURE: %s\n\n", architecture);
+    std::printf(">> LOADING\n");
+
+    std::ifstream file(PATHBASE + "data/data.json", std::ifstream::binary);
+    if (!file.is_open()) {
+        SDL_SetError("\"data.json\" could not be opened.");
+        return false;
+    }
     Json::Value data;
     file >> data;
 
-    Game external;
-
     /* Paths */
     for (Json::Value string : data["map"]["texture"]) {
-        external.TILEPATHS.push_back(string.asString());
+        game.TILEPATHS.push_back(PATHBASE + string.asString());
     }
     for (Json::Value string : data["game"]["icons"]) {
-        external.ICONPATHS.push_back(string.asString());
+        game.ICONPATHS.push_back(PATHBASE + string.asString());
     }
     for (Json::Value string : data["game"]["bgmusic"]) {
-        external.AUDIOPATHS.push_back(string.asString());
+        game.AUDIOPATHS.push_back(PATHBASE + string.asString());
     }
     /* Screen */
-    external.SCREENWIDTH = data["game"]["screenwidth"].asFloat();
-    external.SCREENHEIGHT = data["game"]["screenheight"].asFloat();
-    external.FONTPATH = data["game"]["font"]["path"].asString();
-    external.FONTSIZE = data["game"]["font"]["size"].asFloat();
-    external.FONTSPEED = data["game"]["font"]["speed"].asFloat();
-    external.ANIMATIONSPEED = data["game"]["animation"]["speed"].asFloat();
-    external.SHOWBOXES = data["game"]["showboxes"].asBool();
+    game.SCREENWIDTH = data["game"]["screenwidth"].asFloat();
+    game.SCREENHEIGHT = data["game"]["screenheight"].asFloat();
+    game.FONTPATH = PATHBASE + data["game"]["font"]["path"].asString();
+    game.FONTSIZE = data["game"]["font"]["size"].asFloat();
+    game.FONTSPEED = data["game"]["font"]["speed"].asFloat();
+    game.ANIMATIONSPEED = data["game"]["animation"]["speed"].asFloat();
+    game.SHOWBOXES = data["game"]["showboxes"].asBool();
     /* Map */
-    external.MAXENTITIES = data["map"]["maxentities"].asInt();
-    external.MAPWIDTH = data["map"]["mapwidth"].asInt();
-    external.MAPHEIGHT = data["map"]["mapheight"].asInt();
-    external.TILEWIDTH = data["map"]["tilewidth"].asInt();
-    external.TILEHEIGHT = data["map"]["tileheight"].asInt();
+    game.MAXENTITIES = data["map"]["maxentities"].asInt();
+    game.MAPWIDTH = data["map"]["mapwidth"].asInt();
+    game.MAPHEIGHT = data["map"]["mapheight"].asInt();
+    game.TILEWIDTH = data["map"]["tilewidth"].asInt();
+    game.TILEHEIGHT = data["map"]["tileheight"].asInt();
 
     /* Obtain tileset identifiers */
     std::map<std::string, int> tileset = { };
     for (int i = 0; i < data["map"]["id"].size(); ++i) {
         tileset[data["map"]["id"][i].asString()] = i;
-        external.MAPSET.push_back(data["map"]["id"][i].asString());
+        game.MAPSET.push_back(data["map"]["id"][i].asString());
     }
 
     /* Convert identifiers to integers */
     std::vector<int> row = { };
-    for (int i = 0; i < external.MAPHEIGHT; ++i) {
-        for (int j = 0; j < external.MAPWIDTH; ++j) {
-            row.push_back(tileset[data["layout"]["map"][j + i * external.MAPWIDTH].asString()]);
+    for (int i = 0; i < game.MAPHEIGHT; ++i) {
+        for (int j = 0; j < game.MAPWIDTH; ++j) {
+            row.push_back(tileset[data["layout"]["map"][j + i * game.MAPWIDTH].asString()]);
         }
-        external.MAP.push_back(row);
+        game.MAP.push_back(row);
         row = { };
     }
 
@@ -59,39 +74,47 @@ Game Reader::readGameData() {
     std::map<std::string, int> npcset = { };
     for (int i = 0; i < data["entityid"].size(); ++i) {
         npcset[data["entityid"][i].asString()] = i;
-        external.NPCSET.push_back(data["entityid"][i].asString());
+        game.NPCSET.push_back(data["entityid"][i].asString());
     }
 
     /* Convert identifiers to integers */
     row = { };
-    for (int i = 0; i < external.MAPHEIGHT; ++i) {
-        for (int j = 0; j < external.MAPWIDTH; ++j) {
-            row.push_back(npcset[data["layout"]["npc"][j + i * external.MAPWIDTH].asString()]);
+    for (int i = 0; i < game.MAPHEIGHT; ++i) {
+        for (int j = 0; j < game.MAPWIDTH; ++j) {
+            row.push_back(npcset[data["layout"]["npc"][j + i * game.MAPWIDTH].asString()]);
         }
-        external.NPC.push_back(row);
+        game.NPC.push_back(row);
         row = { };
     }
 
     /* Capture dialogue */
     file.close();
-    file.open("data/dialogue.json", std::ifstream::binary);
+    file.open(PATHBASE + "data/dialogue.json", std::ifstream::binary);
+    if (!file.is_open()) {
+        SDL_SetError("\"dialogue.json\" could not be opened.");
+        return false;
+    }
     file >> data;
 
     std::vector<std::string> lines = { };
-    for (auto entityid : external.NPCSET) {
+    for (auto entityid : game.NPCSET) {
         for (auto line : data[entityid]) {
             lines.push_back(line.asString());
         }
-        external.DIALOGUE.push_back(lines);
+        game.DIALOGUE.push_back(lines);
         lines = { };
     }
 
     /* Convert entity data into templates */
     file.close();
-    file.open("data/entity.json", std::ifstream::binary);
+    file.open(PATHBASE + "data/entity.json", std::ifstream::binary);
+    if (!file.is_open()) {
+        SDL_SetError("\"entity.json\" could not be opened.");
+        return false;
+    }
     file >> data;
 
-    for (auto entityid : external.NPCSET) {
+    for (auto entityid : game.NPCSET) {
         EntityTemplate entityTemplate;
         int type = npcset[entityid];
         entityTemplate.type = type;
@@ -99,7 +122,7 @@ Game Reader::readGameData() {
             Json::Value entity = data[entityid];
             entityTemplate.group = entity["group"].asString();
             for (auto path : entity["texture"]["paths"]) {
-                entityTemplate.texturePaths.push_back(path.asString());
+                entityTemplate.texturePaths.push_back(PATHBASE + path.asString());
             }
             entityTemplate.rect = { 0, 0, entity["texture"]["width"].asFloat(), entity["texture"]["height"].asFloat() };
             entityTemplate.hitbox = { 0, 0, entity["hitbox"]["width"].asFloat(), entity["hitbox"]["height"].asFloat() };
@@ -107,7 +130,7 @@ Game Reader::readGameData() {
             entityTemplate.speed = entity["speed"].asFloat();
             entityTemplate.range = entity["range"].asInt();
         }
-        external.ENTITYTEMPLATES[entityid] = entityTemplate;
+        game.ENTITYTEMPLATES[entityid] = entityTemplate;
     }
 
     file.close();
@@ -116,31 +139,31 @@ Game Reader::readGameData() {
     std::printf(">> CONFIRM\n\n");
 
     std::printf(">> TILEPATHS\n");
-    for (std::string string : external.TILEPATHS) {
+    for (std::string string : game.TILEPATHS) {
         std::printf("%s\n", (!string.empty()) ? string.c_str() : "[NULL]");
     }
     std::printf(">> ICONPATHS\n");
-    for (std::string string : external.ICONPATHS) {
+    for (std::string string : game.ICONPATHS) {
         std::printf("%s\n", (!string.empty()) ? string.c_str() : "[NULL]");
     }
     std::printf(">> AUDIOPATHS\n");
-    for (std::string string : external.AUDIOPATHS) {
+    for (std::string string : game.AUDIOPATHS) {
         std::printf("%s\n", (!string.empty()) ? string.c_str() : "[NULL]");
     }
 
     std::printf("\n>> SCREEN\n");
-    std::printf("SCREENWIDTH: %.1f\n", external.SCREENWIDTH);
-    std::printf("SCREENHEIGHT: %.1f\n", external.SCREENHEIGHT);
-    std::printf("FONTPATH: %s\n", external.FONTPATH.c_str());
-    std::printf("FONTSIZE: %.1f\n", external.FONTSIZE);
-    std::printf("FONTSPEED: %.1f\n", external.FONTSPEED);
-    std::printf("ANIMATIONSPEED: %.1f\n", external.ANIMATIONSPEED);
-    std::printf("SHOWBOXES: %s\n", external.SHOWBOXES ? "TRUE" : "FALSE");
+    std::printf("SCREENWIDTH: %.1f\n", game.SCREENWIDTH);
+    std::printf("SCREENHEIGHT: %.1f\n", game.SCREENHEIGHT);
+    std::printf("FONTPATH: %s\n", game.FONTPATH.c_str());
+    std::printf("FONTSIZE: %.1f\n", game.FONTSIZE);
+    std::printf("FONTSPEED: %.1f\n", game.FONTSPEED);
+    std::printf("ANIMATIONSPEED: %.1f\n", game.ANIMATIONSPEED);
+    std::printf("SHOWBOXES: %s\n", game.SHOWBOXES ? "TRUE" : "FALSE");
 
     std::printf("\n>> ENTITIES\n");
-    for (auto entityid : external.NPCSET) {
-        EntityTemplate entity = external.ENTITYTEMPLATES[entityid];
-        std::printf("%s: %d\n", external.NPCSET[entity.type].c_str(), entity.type);
+    for (auto entityid : game.NPCSET) {
+        EntityTemplate entity = game.ENTITYTEMPLATES[entityid];
+        std::printf("%s: %d\n", game.NPCSET[entity.type].c_str(), entity.type);
         if (entity.type > 0) {
             std::printf("  GROUP: %s\n", entity.group.c_str());
             std::printf("  TEXTURES: \n");
@@ -157,17 +180,17 @@ Game Reader::readGameData() {
     }
 
     std::printf("\n>> MAP\n");
-    std::printf("MAXENTITIES: %d\n", external.MAXENTITIES);
-    std::printf("MAPWIDTH: %d\n", external.MAPWIDTH);
-    std::printf("MAPHEIGHT: %d\n", external.MAPHEIGHT);
-    std::printf("TILEWIDTH: %d\n", external.TILEWIDTH);
-    std::printf("TILEHEIGHT: %d\n", external.TILEHEIGHT);
+    std::printf("MAXENTITIES: %d\n", game.MAXENTITIES);
+    std::printf("MAPWIDTH: %d\n", game.MAPWIDTH);
+    std::printf("MAPHEIGHT: %d\n", game.MAPHEIGHT);
+    std::printf("TILEWIDTH: %d\n", game.TILEWIDTH);
+    std::printf("TILEHEIGHT: %d\n", game.TILEHEIGHT);
 
     std::printf("\n>> LAYOUT\n");
     for (auto [k, v] : tileset) {
         std::printf("%s: %d\n", k.c_str(), v);
     }
-    for (std::vector<int> row : external.MAP) {
+    for (std::vector<int> row : game.MAP) {
         for (int num : row) {
             std::printf("%2d ", num);
         }
@@ -177,7 +200,7 @@ Game Reader::readGameData() {
     for (auto [k, v] : npcset) {
         std::printf("%s: %d\n", k.c_str(), v);
     }
-    for (std::vector<int> row : external.NPC) {
+    for (std::vector<int> row : game.NPC) {
         for (int num : row) {
             std::printf("%2d ", num);
         }
@@ -186,8 +209,8 @@ Game Reader::readGameData() {
 
     std::printf("\n>> DIALOGUE\n");
     int dialogueidx = 0;
-    for (auto entity : external.DIALOGUE) {
-        std::printf("%s: ", external.NPCSET[dialogueidx].c_str());
+    for (auto entity : game.DIALOGUE) {
+        std::printf("%s: ", game.NPCSET[dialogueidx].c_str());
         for (auto line : entity) {
             std::printf("\"%s\" ", line.c_str());
         }
@@ -197,5 +220,5 @@ Game Reader::readGameData() {
 
     std::printf("\n>> GAME DATA LOADED - BEGIN PROCESSING\n");
 
-    return external;
+    return true;
 }
